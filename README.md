@@ -15,3 +15,10 @@ Copyright 2019 Nathan Wilcox
 ## Status
 
 Not-yet-proof-of-concept.
+
+## Todo
+
+- Multiplex over stdout / stderr lines.
+- Add exit status.
+- Refactor API / improve tests.
+- Bump version number / release.
