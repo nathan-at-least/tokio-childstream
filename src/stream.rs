@@ -5,6 +5,7 @@ use tokio::process::Child;
 use tokio::process::Command;
 use tokio_util::io::ReaderStream;
 
+/// Spawn `command` and conver the child into a stream of [ChildItem]
 pub fn spawn_stream(
     command: &mut Command,
 ) -> std::io::Result<impl Stream<Item = std::io::Result<ChildItem>>> {
@@ -17,6 +18,7 @@ pub fn spawn_stream(
         .map(child_stream)
 }
 
+/// Convert a [Child] into a stream over [ChildItem] events
 pub fn child_stream(mut child: Child) -> impl Stream<Item = std::io::Result<ChildItem>> {
     use futures::channel::mpsc;
     use ChildItem::*;
@@ -53,9 +55,15 @@ pub fn child_stream(mut child: Child) -> impl Stream<Item = std::io::Result<Chil
     receiver
 }
 
+/// Represents events from a [Child]
 #[derive(Debug)]
 pub enum ChildItem {
+    /// Bytes read from the child's stdout
     Stdout(Bytes),
+
+    /// Bytes read from the child's stderr
     Stderr(Bytes),
+
+    /// The [ExitStatus] of the child
     Exit(ExitStatus),
 }
