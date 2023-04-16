@@ -1,0 +1,23 @@
+on: pull_request
+
+name: cargo-checkmate Continuous Integration
+
+jobs:
+  cargo-checkmate:
+    name: cargo-checkmate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      - run: cargo install cargo-checkmate
+      - run: cargo-checkmate check
+      - run: cargo-checkmate format
+      - run: cargo-checkmate clippy
+      - run: cargo-checkmate build
+      - run: cargo-checkmate test
+      - run: cargo-checkmate doc
+      - run: cargo-checkmate audit
