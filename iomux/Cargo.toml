@@ -1,0 +1,18 @@
+[package]
+name = "iomux"
+version = "0.1.0"
+homepage.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+clap.workspace = true
+tokio = { workspace = true, features = ["rt", "macros", "process"] }
+
+[dependencies.tokio-childstream]
+path = "../tokio-childstream"
+version = "0.1.0"
+
+[dev-dependencies]
+test-case.workspace = true
