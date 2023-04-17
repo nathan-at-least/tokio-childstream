@@ -17,9 +17,16 @@ struct RawOptions {
 
 impl Options {
     pub fn parse() -> anyhow::Result<Self> {
+        use clap::CommandFactory;
+
         let ropts = RawOptions::parse();
-        let subcommands = parse_subcommands(ropts.subcommands.iter().map(String::as_ref))?;
-        Ok(Options { subcommands })
+        match parse_subcommands(ropts.subcommands.iter().map(String::as_ref)) {
+            Ok(subcommands) => Ok(Options { subcommands }),
+            Err(e) => {
+                eprintln!("{}", RawOptions::command().render_help().ansi());
+                Err(e)
+            }
+        }
     }
 }
 
