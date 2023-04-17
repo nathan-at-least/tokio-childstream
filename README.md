@@ -1,0 +1,1 @@
+- [tokio-childstream](tokio-childstream) is a crate to convert a [tokio::process::Child]([200~https://docs.rs/tokio/1.27.0/tokio/process/struct.Child.html) into a stream of stdout/stderr/exit events.
