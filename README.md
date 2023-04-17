@@ -1,2 +1,1 @@
-Convert a [tokio::process::Child] into a [futures::Stream] which yields
-[ChildItem]s for stdout, stderr, and the exit status.
+- [tokio-childstream](tokio-childstream) is a crate to convert a [tokio::process::Child]([200~https://docs.rs/tokio/1.27.0/tokio/process/struct.Child.html) into a stream of stdout/stderr/exit events.
