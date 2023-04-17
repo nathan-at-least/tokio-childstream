@@ -1,18 +1,4 @@
-[package]
-name = "tokio-childstream"
-description = "Convert a tokio::process::Child into a Stream for stdout, stderr, and exit events."
-homepage = "https://github.com/nathan-at-least/tokio-childstream"
-version = "0.1.0"
-edition = "2021"
-license = "MIT"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
-bytes = "1.4.0"
-futures = "0.3.28"
-tokio = { version = "1.27.0", features = ["process", "rt"] }
-tokio-util = { version = "0.7.7", features = ["io"] }
-
-[dev-dependencies]
-tokio = { version = "1.27.0", features = ["rt", "macros"] }
+[workspace]
+members = [
+  "tokio-childstream",
+]
