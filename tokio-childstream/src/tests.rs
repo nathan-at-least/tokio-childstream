@@ -1,12 +1,12 @@
 // TODO: These tests are platform-specific, assuming unixy utilities are present.
 
-use crate::{spawn_stream, ChildItem::*};
+use crate::{ChildItem::*, CommandExt};
 use futures::StreamExt;
 use tokio::process::Command;
 
 #[tokio::test]
 async fn exit_0() {
-    let mut stream = spawn_stream(&mut Command::new("true")).unwrap();
+    let mut stream = Command::new("true").spawn_stream().unwrap();
     let event = stream.next().await.unwrap();
     assert!(stream.next().await.is_none());
     match event {
@@ -19,7 +19,11 @@ async fn exit_0() {
 
 #[tokio::test]
 async fn hello_world() {
-    let mut stream = spawn_stream(&mut Command::new("echo").arg("hello").arg("world")).unwrap();
+    let mut stream = Command::new("echo")
+        .arg("hello")
+        .arg("world")
+        .spawn_stream()
+        .unwrap();
     let mut found_hw = false;
     let mut found_exit = false;
     while let Some(event) = stream.next().await {
@@ -40,8 +44,11 @@ async fn hello_world() {
 
 #[tokio::test]
 async fn stderr_hello_world() {
-    let mut stream =
-        spawn_stream(&mut Command::new("bash").arg("-c").arg("echo 'hello world' >&2")).unwrap();
+    let mut stream = Command::new("bash")
+        .arg("-c")
+        .arg("echo 'hello world' >&2")
+        .spawn_stream()
+        .unwrap();
     let mut found_hw = false;
     let mut found_exit = false;
     while let Some(event) = stream.next().await {

@@ -2,7 +2,7 @@ mod options;
 
 use self::options::Options;
 use futures::StreamExt;
-use tokio_childstream::{spawn_stream, ChildItem::*};
+use tokio_childstream::{ChildItem::*, CommandExt};
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> anyhow::Result<()> {
@@ -11,7 +11,7 @@ async fn main() -> anyhow::Result<()> {
     let mut streams = vec![];
     for (i, mut cmd) in opts.subcommands.into_iter().enumerate() {
         println!("{}I: Spawning {:?}", i, cmd.as_std());
-        let stream = spawn_stream(&mut cmd)?;
+        let stream = cmd.spawn_stream()?;
         streams.push(stream.map(move |event| (i, event)));
     }
 
