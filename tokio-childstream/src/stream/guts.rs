@@ -10,7 +10,7 @@ pub(super) type InnerStream = Chain<mpsc::UnboundedReceiver<StreamItem>, ExitStr
 pub(super) type ExitStream = Pin<Box<dyn Stream<Item = StreamItem>>>;
 
 pub(super) fn from_child(mut child: Child) -> ChildStream {
-    use crate::ChildItem;
+    use crate::ChildEvent;
     use futures::StreamExt;
 
     let id = child.id().unwrap();
@@ -20,7 +20,7 @@ pub(super) fn from_child(mut child: Child) -> ChildStream {
     create_optional_send_task(sender, child.stderr.take(), ByteSource::Stderr);
 
     let exitstream: ExitStream = Box::pin(futures::stream::once(async move {
-        child.wait().await.map(ChildItem::Exit)
+        child.wait().await.map(ChildEvent::Exit)
     }));
 
     let stream = receiver.chain(exitstream);
@@ -35,7 +35,7 @@ fn create_optional_send_task<R>(
 ) where
     R: AsyncRead + Unpin + Send + 'static,
 {
-    use crate::ChildItem::Bytes;
+    use crate::ChildEvent::Bytes;
     use futures::StreamExt;
     use tokio_util::io::ReaderStream;
 

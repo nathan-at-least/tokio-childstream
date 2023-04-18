@@ -9,7 +9,7 @@ use futures::StreamExt;
 use tokio::process::Command;
 use tokio_childstream::{
     ByteSource::{self, *},
-    ChildItem::*,
+    ChildEvent::*,
     ChildStream,
 };
 

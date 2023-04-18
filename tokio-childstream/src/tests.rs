@@ -2,7 +2,7 @@
 
 use crate::{
     ByteSource::{Stderr, Stdout},
-    ChildItem::{Bytes, Exit},
+    ChildEvent::{Bytes, Exit},
     CommandExt,
 };
 use futures::StreamExt;

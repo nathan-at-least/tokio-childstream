@@ -3,7 +3,7 @@ use std::process::ExitStatus;
 
 /// Represents events from a [ChildStream](crate::ChildStream)
 #[derive(Clone, Debug)]
-pub enum ChildItem {
+pub enum ChildEvent {
     /// Bytes read from the child
     Bytes(ByteSource, Bytes),
 

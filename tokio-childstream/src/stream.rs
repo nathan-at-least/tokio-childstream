@@ -1,13 +1,13 @@
 mod guts;
 
 use self::guts::InnerStream;
-use crate::ChildItem;
+use crate::ChildEvent;
 use futures::task::{Context, Poll};
 use futures::Stream;
 use std::pin::Pin;
 use tokio::process::Child;
 
-/// Provide a [Stream](futures::Stream) over [std::io::Result]s of [ChildItem]s
+/// Provide a [Stream](futures::Stream) over [std::io::Result]s of [ChildEvent]s
 ///
 /// Convert a [tokio::process::Child] with [ChildStream::from].
 ///
@@ -18,7 +18,7 @@ pub struct ChildStream {
     stream: InnerStream,
 }
 
-pub type StreamItem = std::io::Result<ChildItem>;
+pub type StreamItem = std::io::Result<ChildEvent>;
 
 impl ChildStream {
     pub fn id(&self) -> u32 {
