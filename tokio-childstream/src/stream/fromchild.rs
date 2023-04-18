@@ -1,24 +1,25 @@
 use super::ChildStream;
 use crate::{ByteSource, StreamItem};
 use futures::channel::mpsc;
-use futures::{Stream, StreamExt};
-use std::pin::Pin;
 use tokio::io::AsyncRead;
 use tokio::process::Child;
 
 impl From<Child> for ChildStream {
     fn from(mut child: Child) -> Self {
-        use crate::{ByteSource::*, ChildItem::*};
+        use crate::ChildItem;
+        use futures::Stream;
+        use futures::StreamExt;
+        use std::pin::Pin;
 
         let id = child.id().unwrap();
         let (sender, receiver) = mpsc::unbounded();
 
-        create_optional_send_task(sender.clone(), child.stdout.take(), Stdout);
-        create_optional_send_task(sender, child.stderr.take(), Stderr);
+        create_optional_send_task(sender.clone(), child.stdout.take(), ByteSource::Stdout);
+        create_optional_send_task(sender, child.stderr.take(), ByteSource::Stderr);
 
         let exitstream: Pin<Box<dyn Stream<Item = StreamItem>>> =
             Box::pin(futures::stream::once(async move {
-                child.wait().await.map(Exit)
+                child.wait().await.map(ChildItem::Exit)
             }));
 
         let stream = receiver.chain(exitstream);
@@ -35,6 +36,7 @@ fn create_optional_send_task<R>(
     R: AsyncRead + Unpin + Send + 'static,
 {
     use crate::ChildItem::Bytes;
+    use futures::StreamExt;
     use tokio_util::io::ReaderStream;
 
     if let Some(out) = optout {
