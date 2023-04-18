@@ -8,9 +8,9 @@ use bytes::BytesMut;
 use futures::StreamExt;
 use tokio::process::Command;
 use tokio_childstream::{
-    ByteSource::{self, *},
     ChildEvent::*,
     ChildStream,
+    OutputSource::{self, *},
 };
 
 #[tokio::main(flavor = "current_thread")]
@@ -78,7 +78,7 @@ fn spawn(mut cmd: Command) -> std::io::Result<(ChildStream, ChildState)> {
     Ok((stream, state))
 }
 
-fn print_bytes(pid: u32, source: ByteSource, bytes: BytesMut) {
+fn print_bytes(pid: u32, source: OutputSource, bytes: BytesMut) {
     let tag = match source {
         Stdout => ' ',
         Stderr => '!',

@@ -5,7 +5,7 @@ mod event;
 mod stream;
 
 pub use self::commandext::CommandExt;
-pub use self::event::{ByteSource, ChildEvent};
+pub use self::event::{ChildEvent, OutputSource};
 pub use self::stream::{ChildStream, StreamItem};
 
 #[cfg(test)]

@@ -5,7 +5,7 @@ use std::process::ExitStatus;
 #[derive(Clone, Debug)]
 pub enum ChildEvent {
     /// Bytes read from the child
-    Output(ByteSource, Bytes),
+    Output(OutputSource, Bytes),
 
     /// The [ExitStatus] of the child
     Exit(ExitStatus),
@@ -13,7 +13,7 @@ pub enum ChildEvent {
 
 /// Indicate the source of child output
 #[derive(Copy, Clone, Debug)]
-pub enum ByteSource {
+pub enum OutputSource {
     Stdout,
     Stderr,
 }

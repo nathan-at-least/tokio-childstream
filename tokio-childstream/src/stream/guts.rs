@@ -1,5 +1,5 @@
 use super::ChildStream;
-use crate::{ByteSource, StreamItem};
+use crate::{OutputSource, StreamItem};
 use futures::channel::mpsc;
 use futures::stream::{Chain, Stream};
 use std::pin::Pin;
@@ -16,8 +16,8 @@ pub(super) fn from_child(mut child: Child) -> ChildStream {
     let id = child.id().unwrap();
     let (sender, receiver) = mpsc::unbounded();
 
-    create_optional_send_task(sender.clone(), child.stdout.take(), ByteSource::Stdout);
-    create_optional_send_task(sender, child.stderr.take(), ByteSource::Stderr);
+    create_optional_send_task(sender.clone(), child.stdout.take(), OutputSource::Stdout);
+    create_optional_send_task(sender, child.stderr.take(), OutputSource::Stderr);
 
     let exitstream: ExitStream = Box::pin(futures::stream::once(async move {
         child.wait().await.map(ChildEvent::Exit)
@@ -31,7 +31,7 @@ pub(super) fn from_child(mut child: Child) -> ChildStream {
 fn create_optional_send_task<R>(
     sender: mpsc::UnboundedSender<StreamItem>,
     optout: Option<R>,
-    source: ByteSource,
+    source: OutputSource,
 ) where
     R: AsyncRead + Unpin + Send + 'static,
 {

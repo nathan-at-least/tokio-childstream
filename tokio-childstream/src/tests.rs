@@ -1,9 +1,9 @@
 // TODO: These tests are platform-specific, assuming unixy utilities are present.
 
 use crate::{
-    ByteSource::{Stderr, Stdout},
     ChildEvent::{Exit, Output},
     CommandExt,
+    OutputSource::{Stderr, Stdout},
 };
 use futures::StreamExt;
 use tokio::process::Command;
