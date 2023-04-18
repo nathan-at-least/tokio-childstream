@@ -35,7 +35,7 @@ fn create_optional_send_task<R>(
 ) where
     R: AsyncRead + Unpin + Send + 'static,
 {
-    use crate::ChildEvent::Bytes;
+    use crate::ChildEvent::Output;
     use futures::StreamExt;
     use tokio_util::io::ReaderStream;
 
@@ -44,7 +44,7 @@ fn create_optional_send_task<R>(
             let mut stream = ReaderStream::new(out);
             while let Some(bytesres) = stream.next().await {
                 sender
-                    .unbounded_send(bytesres.map(|b| Bytes(source, b)))
+                    .unbounded_send(bytesres.map(|b| Output(source, b)))
                     .unwrap();
             }
         });

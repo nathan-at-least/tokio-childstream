@@ -31,7 +31,7 @@ async fn main() -> anyhow::Result<()> {
         let pid = state.pid;
 
         match evres {
-            Ok(Bytes(source, bytes)) => {
+            Ok(Output(source, bytes)) => {
                 let buf = match source {
                     Stdout => &mut state.outbuf,
                     Stderr => &mut state.errbuf,
