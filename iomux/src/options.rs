@@ -10,6 +10,10 @@ pub struct Options {
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct RawOptions {
+    /// Print examples and longer explanation
+    #[clap(long)]
+    examples: bool,
+
     /// Sequences of subcommand args, separated by `--`
     #[clap(trailing_var_arg = true)]
     subcommands: Vec<String>,
@@ -20,11 +24,23 @@ impl Options {
         use clap::CommandFactory;
 
         let ropts = RawOptions::parse();
-        match parse_subcommands(ropts.subcommands.iter().map(String::as_ref)) {
-            Ok(subcommands) => Ok(Options { subcommands }),
-            Err(e) => {
+        if ropts.examples {
+            if ropts.subcommands.is_empty() {
+                println!("{}", include_str!("../README.md"));
+                std::process::exit(0);
+            } else {
                 eprintln!("{}", RawOptions::command().render_help().ansi());
-                Err(e)
+                Err(anyhow::anyhow!(
+                    "Subcommands and `--examples` cannot both be present."
+                ))
+            }
+        } else {
+            match parse_subcommands(ropts.subcommands.iter().map(String::as_ref)) {
+                Ok(subcommands) => Ok(Options { subcommands }),
+                Err(e) => {
+                    eprintln!("{}", RawOptions::command().render_help().ansi());
+                    Err(e)
+                }
             }
         }
     }
