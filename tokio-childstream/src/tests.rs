@@ -1,9 +1,9 @@
 // TODO: These tests are platform-specific, assuming unixy utilities are present.
 
 use crate::{
-    ByteSource::{Stderr, Stdout},
-    ChildItem::{Bytes, Exit},
+    ChildEvent::{Exit, Output},
     CommandExt,
+    OutputSource::{Stderr, Stdout},
 };
 use futures::StreamExt;
 use tokio::process::Command;
@@ -32,7 +32,7 @@ async fn hello_world() {
     let mut found_exit = false;
     while let Some(event) = stream.next().await {
         match event {
-            Ok(Bytes(Stdout, bytes)) => {
+            Ok(Output(Stdout, bytes)) => {
                 assert_eq!(b"hello world\n", bytes.as_ref(),);
                 found_hw = true;
             }
@@ -57,7 +57,7 @@ async fn stderr_hello_world() {
     let mut found_exit = false;
     while let Some(event) = stream.next().await {
         match event {
-            Ok(Bytes(Stderr, bytes)) => {
+            Ok(Output(Stderr, bytes)) => {
                 assert_eq!(b"hello world\n", bytes.as_ref(),);
                 found_hw = true;
             }
