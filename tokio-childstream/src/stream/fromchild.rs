@@ -1,4 +1,7 @@
 use super::ChildStream;
+use super::StreamItem;
+use futures::Stream;
+use std::pin::Pin;
 use tokio::process::Child;
 
 impl From<Child> for ChildStream {
@@ -27,7 +30,7 @@ impl From<Child> for ChildStream {
         }
 
         if let Some(stderr) = opterr {
-            let errsender = sender.clone();
+            let errsender = sender;
             tokio::task::spawn(async move {
                 let mut stream = ReaderStream::new(stderr);
                 while let Some(bytesres) = stream.next().await {
@@ -38,10 +41,13 @@ impl From<Child> for ChildStream {
             });
         }
 
-        tokio::task::spawn(async move {
-            sender.unbounded_send(child.wait().await.map(Exit)).unwrap();
-        });
+        let exitstream: Pin<Box<dyn Stream<Item = StreamItem>>> =
+            Box::pin(futures::stream::once(async move {
+                child.wait().await.map(Exit)
+            }));
 
-        ChildStream { id, receiver }
+        let stream = receiver.chain(exitstream);
+
+        ChildStream { id, stream }
     }
 }
