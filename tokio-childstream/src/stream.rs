@@ -11,4 +11,13 @@ use futures::channel::mpsc;
 /// To spawn a [ChildStream] directly from [tokio::process::Command] see
 /// [CommandExt::spawn_stream](crate::CommandExt::spawn_stream).
 #[derive(Debug)]
-pub struct ChildStream(mpsc::UnboundedReceiver<std::io::Result<ChildItem>>);
+pub struct ChildStream {
+    id: u32,
+    receiver: mpsc::UnboundedReceiver<std::io::Result<ChildItem>>,
+}
+
+impl ChildStream {
+    pub fn id(&self) -> u32 {
+        self.id
+    }
+}

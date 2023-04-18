@@ -3,11 +3,12 @@ use tokio::process::Child;
 
 impl From<Child> for ChildStream {
     fn from(mut child: Child) -> Self {
-        use crate::ChildItem;
+        use crate::{ByteSource::*, ChildItem::*};
         use futures::channel::mpsc;
         use futures::StreamExt;
         use tokio_util::io::ReaderStream;
 
+        let id = child.id().unwrap();
         let optout = child.stdout.take();
         let opterr = child.stderr.take();
 
@@ -19,7 +20,7 @@ impl From<Child> for ChildStream {
                 let mut stream = ReaderStream::new(stdout);
                 while let Some(bytesres) = stream.next().await {
                     outsender
-                        .unbounded_send(bytesres.map(ChildItem::Stdout))
+                        .unbounded_send(bytesres.map(|b| Bytes(Stdout, b)))
                         .unwrap();
                 }
             });
@@ -31,18 +32,16 @@ impl From<Child> for ChildStream {
                 let mut stream = ReaderStream::new(stderr);
                 while let Some(bytesres) = stream.next().await {
                     errsender
-                        .unbounded_send(bytesres.map(ChildItem::Stderr))
+                        .unbounded_send(bytesres.map(|b| Bytes(Stderr, b)))
                         .unwrap();
                 }
             });
         }
 
         tokio::task::spawn(async move {
-            sender
-                .unbounded_send(child.wait().await.map(ChildItem::Exit))
-                .unwrap();
+            sender.unbounded_send(child.wait().await.map(Exit)).unwrap();
         });
 
-        ChildStream(receiver)
+        ChildStream { id, receiver }
     }
 }
