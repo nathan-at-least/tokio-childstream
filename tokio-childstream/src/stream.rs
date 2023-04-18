@@ -7,7 +7,7 @@ use futures::Stream;
 use std::pin::Pin;
 use tokio::process::Child;
 
-/// Provide a [Stream](futures::Stream) over [std::io::Result]s of [ChildEvent]s
+/// Provide a [Stream](futures::Stream) over [StreamItem]s from a [tokio::process::Child]
 ///
 /// Convert a [tokio::process::Child] with [ChildStream::from].
 ///
@@ -18,9 +18,14 @@ pub struct ChildStream {
     stream: InnerStream,
 }
 
+/// The [ChildStream] items yield a [Result] of either a [ChildEvent] or [std::io::Error]
 pub type StreamItem = std::io::Result<ChildEvent>;
 
 impl ChildStream {
+    /// Return the OS id of the child
+    ///
+    /// ⚠ Warning: This is invalid after the child exits  and may refer to a different arbitrary
+    /// process on some OSes. This may occur prior to [ChildEvent::Exit] is yielded.
     pub fn id(&self) -> u32 {
         self.id
     }
