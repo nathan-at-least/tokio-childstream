@@ -8,6 +8,9 @@ pub enum ChildEvent {
     Output(OutputSource, Bytes),
 
     /// The [ExitStatus] of the child
+    ///
+    /// Note: [ChildStream](crate::ChildStream) ensures this is the last event emitted so long as
+    /// there are no [std::io::Error] items yielded.
     Exit(ExitStatus),
 }
 
