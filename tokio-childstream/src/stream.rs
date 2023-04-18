@@ -1,10 +1,11 @@
-mod fromchild;
-mod streamimpl;
+mod guts;
 
+use self::guts::InnerStream;
 use crate::ChildItem;
-use futures::channel::mpsc::UnboundedReceiver;
-use futures::stream::{Chain, Stream};
+use futures::task::{Context, Poll};
+use futures::Stream;
 use std::pin::Pin;
+use tokio::process::Child;
 
 /// Provide a [Stream](futures::Stream) over [std::io::Result]s of [ChildItem]s
 ///
@@ -14,7 +15,7 @@ use std::pin::Pin;
 /// [CommandExt::spawn_stream](crate::CommandExt::spawn_stream).
 pub struct ChildStream {
     id: u32,
-    stream: Chain<UnboundedReceiver<StreamItem>, Pin<Box<dyn Stream<Item = StreamItem>>>>,
+    stream: InnerStream,
 }
 
 pub type StreamItem = std::io::Result<ChildItem>;
@@ -22,5 +23,24 @@ pub type StreamItem = std::io::Result<ChildItem>;
 impl ChildStream {
     pub fn id(&self) -> u32 {
         self.id
+    }
+}
+
+impl From<Child> for ChildStream {
+    fn from(child: Child) -> Self {
+        self::guts::from_child(child)
+    }
+}
+
+impl Stream for ChildStream {
+    type Item = StreamItem;
+
+    fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        let mutself = Pin::into_inner(self);
+        Stream::poll_next(Pin::new(&mut mutself.stream), cx)
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        self.stream.size_hint()
     }
 }
