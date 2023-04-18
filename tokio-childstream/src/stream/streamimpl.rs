@@ -9,10 +9,10 @@ impl Stream for ChildStream {
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         let mutself = Pin::into_inner(self);
-        Stream::poll_next(Pin::new(&mut mutself.0), cx)
+        Stream::poll_next(Pin::new(&mut mutself.receiver), cx)
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        self.0.size_hint()
+        self.receiver.size_hint()
     }
 }

@@ -2,14 +2,18 @@ use bytes::Bytes;
 use std::process::ExitStatus;
 
 /// Represents events from a [ChildStream](crate::ChildStream)
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum ChildItem {
-    /// Bytes read from the child's stdout
-    Stdout(Bytes),
-
-    /// Bytes read from the child's stderr
-    Stderr(Bytes),
+    /// Bytes read from the child
+    Bytes(ByteSource, Bytes),
 
     /// The [ExitStatus] of the child
     Exit(ExitStatus),
+}
+
+/// Indicate the source of child output
+#[derive(Copy, Clone, Debug)]
+pub enum ByteSource {
+    Stdout,
+    Stderr,
 }
