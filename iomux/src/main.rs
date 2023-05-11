@@ -57,7 +57,8 @@ async fn main() -> anyhow::Result<()> {
 
     for (ix, state) in states.into_iter().enumerate() {
         for (source, buf) in [(Stdout, state.outbuf), (Stderr, state.errbuf)] {
-            if let Some(bytes) = buf.drain_remainder() {
+            let bytes = buf.drain_remainder();
+            if !bytes.is_empty() {
                 print_bytes(ix, source, bytes);
                 println!();
             }

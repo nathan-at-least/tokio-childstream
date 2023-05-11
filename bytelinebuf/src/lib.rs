@@ -1,26 +1,30 @@
-use bytes::BytesMut;
+use bytes::{Bytes, BytesMut};
 use std::collections::VecDeque;
 
 /// Convert arbitrary arbitrary byte sequences into `\n`-terminated [BytesMut]
 ///
 /// Insert bytes via the [Extend] impl.
 #[derive(Debug, Default)]
-pub struct ByteLineBuf(VecDeque<u8>);
-
+pub struct ByteLineBuf {
+    lines: VecDeque<BytesMut>,
+    fragment: BytesMut,
+}
 impl ByteLineBuf {
     /// Return an iterator that drains all complete lines, each represented as [BytesMut]
     pub fn drain_lines(&mut self) -> DrainLines<'_> {
-        DrainLines(&mut self.0)
+        DrainLines(self.lines.drain(..))
     }
 
     /// Convert all bytes remaining in `self` into [BytesMut]
-    pub fn drain_remainder(mut self) -> Option<BytesMut> {
-        if self.0.is_empty() {
-            None
-        } else {
-            let mut bytes = BytesMut::with_capacity(self.0.len());
-            bytes.extend(self.0.drain(..));
-            Some(bytes)
+    pub fn drain_remainder(self) -> BytesMut {
+        self.fragment
+    }
+
+    /// Extend via a single byte
+    pub fn extend_byte(&mut self, b: u8) {
+        self.fragment.extend(Some(b));
+        if b == b'\n' {
+            self.lines.push_back(std::mem::take(&mut self.fragment));
         }
     }
 }
@@ -30,31 +34,42 @@ impl Extend<u8> for ByteLineBuf {
     where
         T: IntoIterator<Item = u8>,
     {
-        self.0.extend(iter)
+        for b in iter {
+            self.extend_byte(b);
+        }
+    }
+}
+
+impl<'a> Extend<&'a u8> for ByteLineBuf {
+    fn extend<T>(&mut self, iter: T)
+    where
+        T: IntoIterator<Item = &'a u8>,
+    {
+        for &b in iter {
+            self.extend_byte(b);
+        }
+    }
+}
+
+impl Extend<Bytes> for ByteLineBuf {
+    fn extend<T>(&mut self, iter: T)
+    where
+        T: IntoIterator<Item = Bytes>,
+    {
+        for bytes in iter {
+            self.extend(bytes);
+        }
     }
 }
 
 /// Drain complete `\n`-terminated lines from a [ByteLineBuf]
-pub struct DrainLines<'a>(&'a mut VecDeque<u8>);
+pub struct DrainLines<'a>(std::collections::vec_deque::Drain<'a, BytesMut>);
 
 impl<'a> Iterator for DrainLines<'a> {
     /// A bytes terminated by `\n`
     type Item = BytesMut;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let itemlen = {
-            let (prefix, suffix) = self.0.as_slices();
-            if let Some(i) = prefix.iter().position(|&b| b == b'\n') {
-                i + 1
-            } else if let Some(j) = suffix.iter().position(|&b| b == b'\n') {
-                prefix.len() + j + 1
-            } else {
-                return None;
-            }
-        };
-
-        let mut bytes = BytesMut::with_capacity(itemlen);
-        bytes.extend(self.0.drain(..itemlen));
-        Some(bytes)
+        self.0.next()
     }
 }
