@@ -1,22 +1,23 @@
-use bytes::{Bytes, BytesMut};
+use bytes::Bytes;
 use std::collections::VecDeque;
 
-/// Convert arbitrary arbitrary byte sequences into `\n`-terminated [BytesMut]
+/// Convert arbitrary arbitrary byte sequences into `\n`-terminated `Vec<u8>`
 ///
 /// Insert bytes via the [Extend] impl.
 #[derive(Debug, Default)]
 pub struct ByteLineBuf {
-    lines: VecDeque<BytesMut>,
-    fragment: BytesMut,
+    lines: VecDeque<Vec<u8>>,
+    fragment: Vec<u8>,
 }
+
 impl ByteLineBuf {
-    /// Return an iterator that drains all complete lines, each represented as [BytesMut]
+    /// Return an iterator that drains all complete lines, each represented as `Vec<u8>`
     pub fn drain_lines(&mut self) -> DrainLines<'_> {
         DrainLines(self.lines.drain(..))
     }
 
-    /// Convert all bytes remaining in `self` into [BytesMut]
-    pub fn drain_remainder(self) -> BytesMut {
+    /// Convert all bytes remaining in `self` into `Vec<u8>`
+    pub fn drain_remainder(self) -> Vec<u8> {
         self.fragment
     }
 
@@ -63,11 +64,11 @@ impl Extend<Bytes> for ByteLineBuf {
 }
 
 /// Drain complete `\n`-terminated lines from a [ByteLineBuf]
-pub struct DrainLines<'a>(std::collections::vec_deque::Drain<'a, BytesMut>);
+pub struct DrainLines<'a>(std::collections::vec_deque::Drain<'a, Vec<u8>>);
 
 impl<'a> Iterator for DrainLines<'a> {
     /// A bytes terminated by `\n`
-    type Item = BytesMut;
+    type Item = Vec<u8>;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.0.next()

@@ -5,7 +5,6 @@ mod options;
 
 use self::childstate::ChildState;
 use self::options::Options;
-use bytes::BytesMut;
 use futures::StreamExt;
 use tokio::process::Command;
 use tokio_childstream::{
@@ -39,7 +38,7 @@ async fn main() -> anyhow::Result<()> {
 
                 buf.extend(bytes);
                 for line in buf.drain_lines() {
-                    print_bytes(ix, source, line);
+                    print_bytes(ix, source, line.as_slice());
                 }
             }
             Ok(Exit(status)) => {
@@ -59,7 +58,7 @@ async fn main() -> anyhow::Result<()> {
         for (source, buf) in [(Stdout, state.outbuf), (Stderr, state.errbuf)] {
             let bytes = buf.drain_remainder();
             if !bytes.is_empty() {
-                print_bytes(ix, source, bytes);
+                print_bytes(ix, source, bytes.as_slice());
                 println!();
             }
         }
@@ -86,11 +85,11 @@ fn spawn(ix: usize, mut cmd: Command) -> std::io::Result<(ChildStream, ChildStat
     Ok((stream, state))
 }
 
-fn print_bytes(ix: usize, source: OutputSource, bytes: BytesMut) {
+fn print_bytes(ix: usize, source: OutputSource, line: &[u8]) {
     let tag = match source {
         Stdout => ' ',
         Stderr => '!',
     };
-    let linestr = String::from_utf8_lossy(bytes.as_ref());
+    let linestr = String::from_utf8_lossy(line);
     print!("{ix}{tag} {linestr}");
 }
