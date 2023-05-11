@@ -1,4 +1,4 @@
-use crate::linebuf::ByteLineBuf;
+use bytelinebuf::ByteLineBuf;
 
 pub struct ChildState {
     pub pid: u32,
