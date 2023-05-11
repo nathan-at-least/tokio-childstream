@@ -1,14 +1,19 @@
 use bytes::BytesMut;
 use std::collections::VecDeque;
 
+/// Convert arbitrary arbitrary byte sequences into `\n`-terminated [BytesMut]
+///
+/// Insert bytes via the [Extend] impl.
 #[derive(Debug, Default)]
 pub struct ByteLineBuf(VecDeque<u8>);
 
 impl ByteLineBuf {
+    /// Return an iterator that drains all complete lines, each represented as [BytesMut]
     pub fn drain_lines(&mut self) -> DrainLines<'_> {
         DrainLines(&mut self.0)
     }
 
+    /// Convert all bytes remaining in `self` into [BytesMut]
     pub fn drain_remainder(mut self) -> Option<BytesMut> {
         if self.0.is_empty() {
             None
