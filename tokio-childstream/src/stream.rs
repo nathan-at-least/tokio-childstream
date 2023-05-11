@@ -1,7 +1,7 @@
 mod guts;
 
 use self::guts::InnerStream;
-use crate::ChildEvent;
+use crate::StreamItem;
 use futures::task::{Context, Poll};
 use futures::Stream;
 use std::pin::Pin;
@@ -17,9 +17,6 @@ pub struct ChildStream {
     id: u32,
     stream: InnerStream,
 }
-
-/// The [ChildStream] items yield a [Result] of either a [ChildEvent] or [std::io::Error]
-pub type StreamItem = std::io::Result<ChildEvent>;
 
 impl ChildStream {
     /// Return the OS id of the child
