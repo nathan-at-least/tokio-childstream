@@ -15,6 +15,7 @@ anyhow = "1.0.70"
 bytes = "1.4.0"
 clap = { version = "4.2.2", features = ["derive"] }
 futures = "0.3.28"
+pin-project = "1.0.12"
 test-case = "3.1.0"
 tokio = "1.27.0"
 tokio-util = { version = "0.7.7", features = ["io"] }
