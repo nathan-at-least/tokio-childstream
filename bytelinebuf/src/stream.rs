@@ -6,8 +6,8 @@ use std::pin::Pin;
 
 /// Map a stream of byte container results into a stream of byte lines results
 ///
-/// The final item will not have a `\n` terminator. If the final byte
-/// of a stream is `\n` then the final item will be `vec![]`.
+/// The final item will not have a `b'\n'` terminator. If the final byte
+/// of a stream is `b'\n'` then the final item will be `vec![]`.
 #[pin_project]
 pub struct ByteLineStream<S, T, E>(#[pin] State<S, T, E>)
 where

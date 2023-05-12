@@ -1,7 +1,7 @@
 use bytes::Bytes;
 use std::collections::VecDeque;
 
-/// Convert arbitrary arbitrary byte sequences into `\n`-terminated `Vec<u8>`
+/// Convert arbitrary arbitrary byte sequences into `b'\n'`-terminated `Vec<u8>`
 ///
 /// Insert bytes via the [Extend] impl.
 #[derive(Debug, Default)]
@@ -67,11 +67,11 @@ impl Extend<Bytes> for ByteLineBuf {
     }
 }
 
-/// Drain complete `\n`-terminated lines from a [ByteLineBuf]
+/// Drain complete `b'\n'`-terminated lines from a [ByteLineBuf]
 pub struct DrainLines<'a>(std::collections::vec_deque::Drain<'a, Vec<u8>>);
 
 impl<'a> Iterator for DrainLines<'a> {
-    /// A bytes terminated by `\n`
+    /// A bytes terminated by `b'\n'`
     type Item = Vec<u8>;
 
     fn next(&mut self) -> Option<Self::Item> {
