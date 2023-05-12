@@ -75,7 +75,7 @@ fn spawn(ix: usize, mut cmd: Command) -> std::io::Result<(ChildStream, ChildStat
         println!("{ix}> spawning {stdcmd:?}");
     }
 
-    let stream = cmd.spawn_stream()?;
+    let stream = cmd.spawn_stream(true)?;
 
     {
         let pid = stream.id();

@@ -4,20 +4,22 @@ use futures::task::{Context, Poll};
 use pin_project::pin_project;
 use std::pin::Pin;
 
-/// Map a stream of byte containers into a stream of byte lines
+/// Map a stream of byte container results into a stream of byte lines results
 ///
 /// The final item will not have a `\n` terminator. If the final byte
 /// of a stream is `\n` then the final item will be `vec![]`.
 #[pin_project]
-pub struct ByteLineStream<S, I>(#[pin] State<S, I>)
+pub struct ByteLineStream<S, T, E>(#[pin] State<S, T, E>)
 where
-    S: Stream<Item = I>,
-    I: IntoIterator<Item = u8>;
+    S: Stream<Item = Result<T, E>>,
+    T: IntoIterator<Item = u8>,
+    T: From<Vec<u8>>;
 
-impl<S, I> From<S> for ByteLineStream<S, I>
+impl<S, T, E> From<S> for ByteLineStream<S, T, E>
 where
-    S: Stream<Item = I>,
-    I: IntoIterator<Item = u8>,
+    S: Stream<Item = Result<T, E>>,
+    T: IntoIterator<Item = u8>,
+    T: From<Vec<u8>>,
 {
     fn from(upstream: S) -> Self {
         ByteLineStream(State::Active {
@@ -26,14 +28,14 @@ where
         })
     }
 }
-impl<S, I> Stream for ByteLineStream<S, I>
+impl<S, T, E> Stream for ByteLineStream<S, T, E>
 where
-    S: Stream<Item = I>,
-    I: IntoIterator<Item = u8>,
+    S: Stream<Item = Result<T, E>>,
+    T: IntoIterator<Item = u8>,
+    T: From<Vec<u8>>,
 {
-    type Item = Vec<u8>;
+    type Item = Result<T, E>;
 
-    // Required method
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         self.project().0.poll_next(cx)
     }
@@ -43,10 +45,11 @@ where
     project = StateProj,
     project_replace = StateReplace,
 )]
-pub enum State<S, I>
+pub enum State<S, T, E>
 where
-    S: Stream<Item = I>,
-    I: IntoIterator<Item = u8>,
+    S: Stream<Item = Result<T, E>>,
+    T: IntoIterator<Item = u8>,
+    T: From<Vec<u8>>,
 {
     Active {
         buf: ByteLineBuf,
@@ -59,28 +62,37 @@ where
     Complete,
 }
 
-impl<S, I> Stream for State<S, I>
+impl<S, T, E> Stream for State<S, T, E>
 where
-    S: Stream<Item = I>,
-    I: IntoIterator<Item = u8>,
+    S: Stream<Item = Result<T, E>>,
+    T: IntoIterator<Item = u8>,
+    T: From<Vec<u8>>,
 {
-    type Item = Vec<u8>;
+    type Item = Result<T, E>;
 
-    // Required method
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         use StateProj::*;
 
         let optnewstate = {
             if let Active { buf, upstream } = self.as_mut().project() {
                 match upstream.poll_next(cx) {
-                    Poll::Ready(Some(bytes)) => {
-                        buf.extend(bytes);
-                        None
+                    Poll::Ready(optitem) => {
+                        if let Some(res) = optitem {
+                            match res {
+                                Ok(bytes) => {
+                                    buf.extend(bytes);
+                                    None
+                                }
+                                error => {
+                                    return Poll::Ready(Some(error));
+                                }
+                            }
+                        } else {
+                            let buf = std::mem::take(buf);
+                            Some(State::WindDown { buf })
+                        }
                     }
-                    Poll::Ready(None) => {
-                        let buf = std::mem::take(buf);
-                        Some(State::WindDown { buf })
-                    }
+
                     Poll::Pending => None,
                 }
             } else {
@@ -95,7 +107,7 @@ where
         let (ret, optnewstate) = match self.as_mut().project() {
             Active { buf, .. } => {
                 if let Some(line) = buf.drain_lines().next() {
-                    (Poll::Ready(Some(line)), None)
+                    (Poll::Ready(Some(Ok(T::from(line)))), None)
                 } else {
                     (Poll::Pending, None)
                 }
@@ -103,10 +115,10 @@ where
             WindDown { buf } => {
                 let optline = buf.drain_lines().next();
                 if let Some(line) = optline {
-                    (Poll::Ready(Some(line)), None)
+                    (Poll::Ready(Some(Ok(T::from(line)))), None)
                 } else {
                     (
-                        Poll::Ready(Some(std::mem::take(buf).drain_remainder())),
+                        Poll::Ready(Some(Ok(T::from(std::mem::take(buf).drain_remainder())))),
                         Some(State::Complete),
                     )
                 }

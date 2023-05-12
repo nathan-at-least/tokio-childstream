@@ -10,7 +10,20 @@ use tokio::process::Child;
 
 /// Provide a [Stream](futures::Stream) over [StreamItem]s from a [tokio::process::Child]
 ///
-/// Convert a [tokio::process::Child] with [ChildStream::from].
+/// # Line Buffering
+///
+/// If line-buffering is enabled via [ChildStream::new] or
+/// [CommandExt::spawn_stream](crate::CommandExt::spawn_stream), each
+/// returned [ChildEvent::Output] bytes is guaranteed to terminate with
+/// `'\n'` except the last.
+///
+/// If the child output terminates with `'\n'` then the last
+/// [ChildEvent::Output] will contain an empty [Bytes].
+///
+/// Without line-buffering, the [Bytes] items contain an unspecified
+/// segmentation of child output.
+///
+/// The `From<tokio::process::Child>` impl does not use line-buffering.
 ///
 /// To spawn a [ChildStream] directly from [tokio::process::Command] see
 /// [CommandExt::spawn_stream](crate::CommandExt::spawn_stream).
@@ -22,6 +35,13 @@ pub struct ChildStream {
 }
 
 impl ChildStream {
+    /// Convert a [Child] to a [ChildStream] with `line_buffering` optionally enabled
+    ///
+    /// See [ChildStream] for a description of line-buffering.
+    pub fn new(child: Child, line_buffering: bool) -> Self {
+        self::guts::from_child(child, line_buffering)
+    }
+
     /// Return the OS id of the child
     ///
     /// ⚠ Warning: This is invalid after the child exits  and may refer to a different arbitrary
@@ -33,7 +53,7 @@ impl ChildStream {
 
 impl From<Child> for ChildStream {
     fn from(child: Child) -> Self {
-        self::guts::from_child(child)
+        Self::new(child, false)
     }
 }
 

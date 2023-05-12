@@ -15,6 +15,7 @@ tokio-util.workspace = true
 
 [dependencies.bytelinebuf]
 path = "../bytelinebuf"
+features = ["stream"]
 version = "0.1.0"
 
 [dev-dependencies.tokio]
