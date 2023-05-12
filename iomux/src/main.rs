@@ -1,9 +1,7 @@
 #![doc = include_str!("../README.md")]
 
-mod childstate;
 mod options;
 
-use self::childstate::ChildState;
 use self::options::Options;
 use futures::StreamExt;
 use tokio::process::Command;
@@ -18,28 +16,16 @@ async fn main() -> anyhow::Result<()> {
     let opts = Options::parse()?;
 
     let mut streams = vec![];
-    let mut states = vec![];
     for (ix, cmd) in opts.subcommands.into_iter().enumerate() {
-        let (stream, state) = spawn(ix, cmd)?;
+        let stream = spawn(ix, cmd)?;
         streams.push(stream.map(move |event| (ix, event)));
-        states.push(state);
     }
 
     let mut events = futures::stream::select_all(streams);
     while let Some((ix, evres)) = events.next().await {
-        let state = &mut states[ix];
-
         match evres {
-            Ok(Output(source, bytes)) => {
-                let buf = match source {
-                    Stdout => &mut state.outbuf,
-                    Stderr => &mut state.errbuf,
-                };
-
-                buf.extend(bytes);
-                for line in buf.drain_lines() {
-                    print_bytes(ix, source, line.as_slice());
-                }
+            Ok(Output(source, line)) => {
+                print_bytes(ix, source, line.as_ref());
             }
             Ok(Exit(status)) => {
                 if let Some(code) = status.code() {
@@ -54,19 +40,10 @@ async fn main() -> anyhow::Result<()> {
         }
     }
 
-    for (ix, state) in states.into_iter().enumerate() {
-        for (source, buf) in [(Stdout, state.outbuf), (Stderr, state.errbuf)] {
-            if let Some(bytes) = buf.drain_remainder() {
-                print_bytes(ix, source, bytes.as_slice());
-                println!();
-            }
-        }
-    }
-
     Ok(())
 }
 
-fn spawn(ix: usize, mut cmd: Command) -> std::io::Result<(ChildStream, ChildState)> {
+fn spawn(ix: usize, mut cmd: Command) -> std::io::Result<ChildStream> {
     use tokio_childstream::CommandExt;
 
     {
@@ -80,8 +57,7 @@ fn spawn(ix: usize, mut cmd: Command) -> std::io::Result<(ChildStream, ChildStat
         let pid = stream.id();
         println!("{ix}> PID {pid}");
     }
-    let state = ChildState::new(stream.id());
-    Ok((stream, state))
+    Ok(stream)
 }
 
 fn print_bytes(ix: usize, source: OutputSource, line: &[u8]) {
@@ -91,4 +67,7 @@ fn print_bytes(ix: usize, source: OutputSource, line: &[u8]) {
     };
     let linestr = String::from_utf8_lossy(line);
     print!("{ix}{tag} {linestr}");
+    if !linestr.ends_with('\n') {
+        println!();
+    }
 }
