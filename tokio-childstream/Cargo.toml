@@ -9,8 +9,13 @@ license.workspace = true
 [dependencies]
 bytes.workspace = true
 futures.workspace = true
+pin-project.workspace = true
 tokio = { workspace = true, features = ["process", "rt"] }
 tokio-util.workspace = true
+
+[dependencies.bytelinebuf]
+path = "../bytelinebuf"
+version = "0.1.0"
 
 [dev-dependencies.tokio]
 workspace = true

@@ -4,6 +4,7 @@ use self::guts::InnerStream;
 use crate::StreamItem;
 use futures::task::{Context, Poll};
 use futures::Stream;
+use pin_project::pin_project;
 use std::pin::Pin;
 use tokio::process::Child;
 
@@ -13,8 +14,10 @@ use tokio::process::Child;
 ///
 /// To spawn a [ChildStream] directly from [tokio::process::Command] see
 /// [CommandExt::spawn_stream](crate::CommandExt::spawn_stream).
+#[pin_project]
 pub struct ChildStream {
     id: u32,
+    #[pin]
     stream: InnerStream,
 }
 
@@ -38,8 +41,7 @@ impl Stream for ChildStream {
     type Item = StreamItem;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        let mutself = Pin::into_inner(self);
-        Stream::poll_next(Pin::new(&mut mutself.stream), cx)
+        self.project().stream.poll_next(cx)
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
