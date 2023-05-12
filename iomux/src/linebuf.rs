@@ -29,11 +29,11 @@ impl Extend<u8> for ByteLineBuf {
     }
 }
 
-/// Drain complete `\n`-terminated lines from a [ByteLineBuf]
+/// Drain complete `b'\n'`-terminated lines from a [ByteLineBuf]
 pub struct DrainLines<'a>(&'a mut VecDeque<u8>);
 
 impl<'a> Iterator for DrainLines<'a> {
-    /// A bytes terminated by `\n`
+    /// A bytes terminated by `b'\n'`
     type Item = BytesMut;
 
     fn next(&mut self) -> Option<Self::Item> {

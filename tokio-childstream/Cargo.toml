@@ -1,6 +1,6 @@
 [package]
 name = "tokio-childstream"
-version = "0.1.0"
+version = "0.1.1"
 description = "Convert a tokio::process::Child into a Stream for stdout, stderr, and exit events."
 homepage.workspace = true
 edition.workspace = true
