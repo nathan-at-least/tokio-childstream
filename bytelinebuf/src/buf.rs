@@ -16,9 +16,13 @@ impl ByteLineBuf {
         DrainLines(self.lines.drain(..))
     }
 
-    /// Convert all bytes remaining in `self` into `Vec<u8>`
-    pub fn drain_remainder(self) -> Vec<u8> {
-        self.fragment
+    /// Convert any bytes remaining in `self` into `Vec<u8>`
+    pub fn drain_remainder(self) -> Option<Vec<u8>> {
+        if !self.fragment.is_empty() {
+            Some(self.fragment)
+        } else {
+            None
+        }
     }
 
     /// Extend via a single byte

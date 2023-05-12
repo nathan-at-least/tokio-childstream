@@ -118,7 +118,9 @@ where
                     (Poll::Ready(Some(Ok(T::from(line)))), None)
                 } else {
                     (
-                        Poll::Ready(Some(Ok(T::from(std::mem::take(buf).drain_remainder())))),
+                        Poll::Ready(
+                            Ok(std::mem::take(buf).drain_remainder().map(T::from)).transpose(),
+                        ),
                         Some(State::Complete),
                     )
                 }
