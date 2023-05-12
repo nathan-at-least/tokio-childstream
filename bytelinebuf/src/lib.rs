@@ -1,4 +1,4 @@
-/// `Iterator` and `Stream` types for splitting bytes on `'\n'`
+//! `Iterator` and `Stream` types for splitting bytes on `'\n'`
 mod buf;
 
 pub use self::buf::{ByteLineBuf, DrainLines};
