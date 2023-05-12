@@ -1,0 +1,18 @@
+[package]
+name = "bytelinebuf"
+version = "0.1.0"
+homepage.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[package.metadata.docs.rs]
+all-features = true
+
+[features]
+default = []
+stream = ["futures", "pin-project"]
+
+[dependencies]
+bytes.workspace = true
+futures = { workspace = true, optional = true }
+pin-project = { workspace = true, optional = true }

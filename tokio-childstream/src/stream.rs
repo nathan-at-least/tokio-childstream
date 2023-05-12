@@ -1,27 +1,47 @@
 mod guts;
 
 use self::guts::InnerStream;
-use crate::ChildEvent;
+use crate::StreamItem;
 use futures::task::{Context, Poll};
 use futures::Stream;
+use pin_project::pin_project;
 use std::pin::Pin;
 use tokio::process::Child;
 
 /// Provide a [Stream](futures::Stream) over [StreamItem]s from a [tokio::process::Child]
 ///
-/// Convert a [tokio::process::Child] with [ChildStream::from].
+/// # Line Buffering
+///
+/// If line-buffering is enabled via [ChildStream::new] or
+/// [CommandExt::spawn_stream](crate::CommandExt::spawn_stream), each
+/// returned [ChildEvent::Output] bytes is guaranteed to terminate with
+/// `'\n'` except the last.
+///
+/// If the child output terminates with `'\n'` then the last
+/// [ChildEvent::Output] will contain an empty [Bytes].
+///
+/// Without line-buffering, the [Bytes] items contain an unspecified
+/// segmentation of child output.
+///
+/// The `From<tokio::process::Child>` impl does not use line-buffering.
 ///
 /// To spawn a [ChildStream] directly from [tokio::process::Command] see
 /// [CommandExt::spawn_stream](crate::CommandExt::spawn_stream).
+#[pin_project]
 pub struct ChildStream {
     id: u32,
+    #[pin]
     stream: InnerStream,
 }
 
-/// The [ChildStream] items yield a [Result] of either a [ChildEvent] or [std::io::Error]
-pub type StreamItem = std::io::Result<ChildEvent>;
-
 impl ChildStream {
+    /// Convert a [Child] to a [ChildStream] with `line_buffering` optionally enabled
+    ///
+    /// See [ChildStream] for a description of line-buffering.
+    pub fn new(child: Child, line_buffering: bool) -> Self {
+        self::guts::from_child(child, line_buffering)
+    }
+
     /// Return the OS id of the child
     ///
     /// ⚠ Warning: This is invalid after the child exits  and may refer to a different arbitrary
@@ -33,7 +53,7 @@ impl ChildStream {
 
 impl From<Child> for ChildStream {
     fn from(child: Child) -> Self {
-        self::guts::from_child(child)
+        Self::new(child, false)
     }
 }
 
@@ -41,8 +61,7 @@ impl Stream for ChildStream {
     type Item = StreamItem;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        let mutself = Pin::into_inner(self);
-        Stream::poll_next(Pin::new(&mut mutself.stream), cx)
+        self.project().stream.poll_next(cx)
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
