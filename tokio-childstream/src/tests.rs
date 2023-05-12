@@ -6,11 +6,14 @@ use crate::{
     OutputSource::{Stderr, Stdout},
 };
 use futures::StreamExt;
+use test_case::test_case;
 use tokio::process::Command;
 
+#[test_case(false ; "no-line-buffering")]
+#[test_case(true ; "line-buffering")]
 #[tokio::test]
-async fn exit_0() {
-    let mut stream = Command::new("true").spawn_stream(false).unwrap();
+async fn exit_0(line_buffering: bool) {
+    let mut stream = Command::new("true").spawn_stream(line_buffering).unwrap();
     let event = stream.next().await.unwrap();
     assert!(stream.next().await.is_none());
     match event {
@@ -21,12 +24,14 @@ async fn exit_0() {
     }
 }
 
+#[test_case(false ; "no-line-buffering")]
+#[test_case(true ; "line-buffering")]
 #[tokio::test]
-async fn hello_world() {
+async fn hello_world(line_buffering: bool) {
     let mut stream = Command::new("echo")
         .arg("hello")
         .arg("world")
-        .spawn_stream(false)
+        .spawn_stream(line_buffering)
         .unwrap();
     let mut found_hw = false;
     let mut found_exit = false;
@@ -46,12 +51,14 @@ async fn hello_world() {
     assert!(found_hw && found_exit);
 }
 
+#[test_case(false ; "no-line-buffering")]
+#[test_case(true ; "line-buffering")]
 #[tokio::test]
-async fn stderr_hello_world() {
+async fn stderr_hello_world(line_buffering: bool) {
     let mut stream = Command::new("bash")
         .arg("-c")
         .arg("echo 'hello world' >&2")
-        .spawn_stream(false)
+        .spawn_stream(line_buffering)
         .unwrap();
     let mut found_hw = false;
     let mut found_exit = false;
