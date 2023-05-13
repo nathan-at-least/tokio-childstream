@@ -16,5 +16,5 @@ futures.workspace = true
 tokio = { workspace = true, features = ["rt", "macros"] }
 
 [dependencies.tokio-childstream]
-path = "../tokio-childstream"
+path = "../../tokio-childstream"
 version = "0.1.0"

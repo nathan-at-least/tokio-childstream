@@ -1,7 +1,8 @@
 [workspace]
 members = [
   "bytelinebuf",
-  "exoshell",
+  "exoshell/main",
+  "exoshell/event-queue",
   "iomux",
   "tokio-childstream",
 ]
