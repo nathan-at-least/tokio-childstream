@@ -1,4 +1,4 @@
-use crate::screen;
+use crate::{screen, Runner};
 use crossterm::event::Event;
 use std::io::{Stdout, Write};
 
@@ -6,18 +6,23 @@ const WELCOME: &str = "🐢 Entering the exoshell…\n";
 const GOODBYE: &str = "🐢 Until next time! 👋\n";
 
 pub struct UI {
+    runner: Runner,
     stdout: Stdout,
     inbuf: String,
 }
 
 impl UI {
-    pub fn new() -> anyhow::Result<Self> {
+    pub fn new(runner: Runner) -> anyhow::Result<Self> {
         let inbuf = String::new();
         let mut stdout = crate::tty::get()?;
         stdout.write_all(WELCOME.as_bytes())?;
         screen::setup(&mut stdout)?;
 
-        let mut me = UI { stdout, inbuf };
+        let mut me = UI {
+            runner,
+            stdout,
+            inbuf,
+        };
         me.display_prompt("$ ")?;
         Ok(me)
     }
@@ -31,7 +36,7 @@ impl UI {
         Ok(())
     }
 
-    pub fn handle_event(&mut self, ev: Event) -> anyhow::Result<Option<String>> {
+    pub fn handle_event(&mut self, ev: Event) -> anyhow::Result<()> {
         use crossterm::event::{Event::Key, KeyEvent, KeyEventKind};
 
         match ev {
@@ -43,7 +48,7 @@ impl UI {
                 use crossterm::event::KeyCode::{Char, Enter};
 
                 match code {
-                    Enter => Ok(Some(std::mem::take(&mut self.inbuf))),
+                    Enter => self.runner.handle_command(&self.inbuf),
                     Char(c) => {
                         self.inbuf.push(c);
 
@@ -52,12 +57,12 @@ impl UI {
                         c.encode_utf8(&mut bytes);
                         self.stdout.write_all(&bytes[..c.len_utf8()])?;
                         self.stdout.flush()?;
-                        Ok(None)
+                        Ok(())
                     }
-                    _ => Ok(None),
+                    _ => Ok(()),
                 }
             }
-            _ => Ok(None),
+            _ => Ok(()),
         }
     }
 

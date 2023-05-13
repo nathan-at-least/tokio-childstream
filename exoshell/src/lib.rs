@@ -4,6 +4,7 @@ pub(crate) mod cmd;
 mod event;
 mod eventstream;
 mod mainloop;
+mod runner;
 mod screen;
 mod status;
 mod tty;
@@ -13,5 +14,5 @@ pub use self::ui::UI;
 
 pub(crate) use self::cmd::Command;
 pub(crate) use self::event::{AppEvent, MainLoopEvent};
-pub(crate) use self::eventstream::EventStream;
 pub(crate) use self::mainloop::main_loop;
+pub(crate) use self::runner::Runner;

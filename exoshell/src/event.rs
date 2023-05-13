@@ -1,17 +1,8 @@
-#[derive(Debug)]
+#[derive(Debug, derive_more::From)]
+#[from(forward)]
 pub(crate) enum MainLoopEvent {
-    #[allow(dead_code)]
     Exit,
     App(AppEvent),
-}
-
-impl<T> From<T> for MainLoopEvent
-where
-    AppEvent: From<T>,
-{
-    fn from(ev: T) -> Self {
-        MainLoopEvent::App(AppEvent::from(ev))
-    }
 }
 
 #[derive(Debug, derive_more::From)]
