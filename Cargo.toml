@@ -1,6 +1,7 @@
 [workspace]
 members = [
   "bytelinebuf",
+  "exoshell",
   "iomux",
   "tokio-childstream",
 ]
@@ -14,6 +15,9 @@ homepage = "https://github.com/nathan-at-least/tokio-childstream"
 anyhow = "1.0.70"
 bytes = "1.4.0"
 clap = { version = "4.2.2", features = ["derive"] }
+crossterm = { version = "0.26.1", features = ["event-stream"] }
+derive_more = "0.99.17"
+derive-new = "0.5.9"
 futures = "0.3.28"
 pin-project = "1.0.12"
 test-case = "3.1.0"

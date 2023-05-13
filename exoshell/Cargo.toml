@@ -1,0 +1,20 @@
+[package]
+name = "exoshell"
+description = "Full-terminal command execution ui"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+homepage.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+clap.workspace = true
+crossterm.workspace = true
+derive_more.workspace = true
+derive-new.workspace = true
+futures.workspace = true
+tokio = { workspace = true, features = ["rt", "macros"] }
+
+[dependencies.tokio-childstream]
+path = "../tokio-childstream"
+version = "0.1.0"
