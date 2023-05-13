@@ -2,7 +2,7 @@ mod cleanup;
 pub mod cli;
 pub(crate) mod cmd;
 mod event;
-mod eventstream;
+mod eventq;
 mod mainloop;
 mod runner;
 mod screen;

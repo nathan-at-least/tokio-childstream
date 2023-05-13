@@ -1,13 +1,13 @@
-use crate::eventstream;
+use crate::eventq;
 
 #[derive(Debug)]
 pub struct Runner {
     runix: usize,
-    evs: eventstream::Sender,
+    evs: eventq::Sender,
 }
 
-impl From<eventstream::Sender> for Runner {
-    fn from(evs: eventstream::Sender) -> Self {
+impl From<eventq::Sender> for Runner {
+    fn from(evs: eventq::Sender) -> Self {
         Runner { runix: 0, evs }
     }
 }
