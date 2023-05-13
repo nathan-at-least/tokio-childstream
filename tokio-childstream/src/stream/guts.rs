@@ -8,7 +8,7 @@ use tokio::io::AsyncRead;
 use tokio::process::Child;
 
 pub(super) type InnerStream = Chain<mpsc::UnboundedReceiver<StreamItem>, ExitStream>;
-pub(super) type ExitStream = Pin<Box<dyn Stream<Item = StreamItem>>>;
+pub(super) type ExitStream = Pin<Box<dyn Stream<Item = StreamItem> + Send>>;
 
 pub(super) fn from_child(mut child: Child, buffer_lines: bool) -> ChildStream {
     use crate::ChildEvent;

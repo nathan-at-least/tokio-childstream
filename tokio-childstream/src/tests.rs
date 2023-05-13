@@ -9,6 +9,23 @@ use futures::StreamExt;
 use test_case::test_case;
 use tokio::process::Command;
 
+// If this test compiles, it already succeeds:
+#[tokio::test]
+async fn check_traits() {
+    use crate::{CommandExt, StreamItem};
+    use futures::Stream;
+    use tokio::process::Command;
+
+    fn constrain<S>(_: S)
+    where
+        S: Stream<Item = StreamItem> + Send,
+    {
+        // It worked!
+    }
+
+    constrain(Command::new("true").spawn_stream(false).unwrap());
+}
+
 #[test_case(false ; "no-line-buffering")]
 #[test_case(true ; "line-buffering")]
 #[tokio::test]
