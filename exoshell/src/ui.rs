@@ -1,4 +1,5 @@
-use crate::{screen, Runner};
+use crate::runner::Runner;
+use crate::screen;
 use crossterm::event::Event;
 use std::io::{Stdout, Write};
 

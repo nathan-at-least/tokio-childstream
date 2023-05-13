@@ -1,4 +1,4 @@
-use crate::MainLoopEvent;
+use crate::event::MainLoopEvent;
 use futures::stream::Stream;
 use tokio::sync::mpsc;
 

@@ -1,4 +1,4 @@
-use crate::{AppEvent, MainLoopEvent};
+use crate::event::{AppEvent, MainLoopEvent};
 use tokio::sync::mpsc;
 
 #[derive(Debug)]

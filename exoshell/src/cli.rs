@@ -1,4 +1,4 @@
-use crate::main_loop;
+use crate::mainloop::main_loop;
 use clap::Parser;
 
 /// A full-terminal interactive shell

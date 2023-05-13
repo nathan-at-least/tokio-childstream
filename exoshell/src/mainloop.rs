@@ -1,8 +1,9 @@
-use crate::{eventq, UI};
+use crate::eventq;
+use crate::ui::UI;
 
 pub(crate) async fn main_loop() -> anyhow::Result<()> {
     use crate::cleanup::CleanupWith;
-    use crate::Runner;
+    use crate::runner::Runner;
 
     let (r, s) = eventq::init();
 
@@ -15,7 +16,7 @@ pub(crate) async fn main_loop() -> anyhow::Result<()> {
 }
 
 pub(crate) async fn main_loop_inner(mut evr: eventq::Reader, ui: &mut UI) -> anyhow::Result<()> {
-    use crate::AppEvent::*;
+    use crate::event::AppEvent::*;
 
     while let Some(event) = evr.next().await {
         match event {
