@@ -3,13 +3,13 @@ use crate::ui::UI;
 
 pub(crate) async fn main_loop() -> anyhow::Result<()> {
     use crate::cleanup::CleanupWith;
-    use crate::runner::Runner;
+    use crate::Runner;
 
     let (reader, sender) = event::init_queue();
 
     sender.send_stream(crossterm::event::EventStream::default());
 
-    let mut ui = UI::new(Runner::from(sender.clone()))?;
+    let mut ui = UI::new(Runner::new(sender.clone()))?;
     main_loop_inner(reader, &mut ui)
         .await
         .cleanup_with(ui.cleanup())?;

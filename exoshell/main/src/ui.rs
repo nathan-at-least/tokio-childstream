@@ -1,19 +1,19 @@
-use crate::runner::Runner;
 use crate::screen;
+use crate::Runner;
 use crossterm::event::Event;
 use std::io::{Stdout, Write};
 
 const WELCOME: &str = "🐢 Entering the exoshell…\n";
 const GOODBYE: &str = "🐢 Until next time! 👋\n";
 
-pub struct UI {
+pub(crate) struct UI {
     runner: Runner,
     stdout: Stdout,
     inbuf: String,
 }
 
 impl UI {
-    pub fn new(runner: Runner) -> anyhow::Result<Self> {
+    pub(crate) fn new(runner: Runner) -> anyhow::Result<Self> {
         let inbuf = String::new();
         let mut stdout = crate::tty::get()?;
         stdout.write_all(WELCOME.as_bytes())?;
@@ -28,16 +28,16 @@ impl UI {
         Ok(me)
     }
 
-    pub fn cleanup(&mut self) -> anyhow::Result<()> {
+    pub(crate) fn cleanup(&mut self) -> anyhow::Result<()> {
         screen::exit(&mut self.stdout)
     }
 
-    pub fn goodbye(&mut self) -> anyhow::Result<()> {
+    pub(crate) fn goodbye(&mut self) -> anyhow::Result<()> {
         self.stdout.write_all(GOODBYE.as_bytes())?;
         Ok(())
     }
 
-    pub fn handle_event(&mut self, ev: Event) -> anyhow::Result<()> {
+    pub(crate) fn handle_event(&mut self, ev: Event) -> anyhow::Result<()> {
         use crossterm::event::{Event::Key, KeyEvent, KeyEventKind};
 
         match ev {
