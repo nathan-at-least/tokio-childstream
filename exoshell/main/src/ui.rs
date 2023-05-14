@@ -90,22 +90,36 @@ impl UI {
     fn display_runs(&mut self) -> anyhow::Result<()> {
         // TODO: This is too messy with excessive clones
         let (cols, rows) = terminal::size()?;
+        let childcols = cols - 1; // Cut off 1 for indicator column
+        let rows = usize::from(rows);
         let mut rowtexts = vec![];
 
         for run in self.runner.runs().rev() {
-            for (_, line) in run.format_log(cols).rev() {
-                rowtexts.push(line.to_string());
+            for (source, line) in run.format_log(childcols).rev() {
+                use exoshell_runner::LogItemSource::*;
+
+                let indicator = match source {
+                    ExecutionError => '❌',
+                    ChildIO => '❌',
+                    ChildOut => ' ',
+                    ChildErr => '⚠',
+                    ChildExit => 'ⓘ',
+                };
+                rowtexts.push(format!("{indicator}{line}"));
             }
-            rowtexts.push(run.format_header(cols).to_string());
-            if rowtexts.len() + 1 == usize::from(rows) {
+            let header = run.format_header(childcols);
+            rowtexts.push(format!("-{header}"));
+            if rowtexts.len() + 1 == rows {
                 break;
             }
         }
 
         for (i, line) in rowtexts.into_iter().enumerate() {
-            let row = rows - 2 - u16::try_from(i).unwrap();
+            assert!(rows >= 2 + i, "rows {rows:?}, i {i:?}");
+            let row = u16::try_from(rows - 2 - i).unwrap();
             self.blit_line(cols, row, &line)?;
         }
+        self.stdout.flush()?;
 
         Ok(())
     }
