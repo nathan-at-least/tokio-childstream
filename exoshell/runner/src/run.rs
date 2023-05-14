@@ -1,6 +1,9 @@
-#[derive(Debug)]
+use crate::formatrows::FormatRows;
+
+#[derive(Debug, derive_new::new)]
 pub struct Run {
-    cmdtext: String,
+    header: String,
+    #[new(default)]
     log: Vec<LogItem>,
 }
 
@@ -20,29 +23,29 @@ pub enum LogItemSource {
 }
 use LogItemSource::*;
 
-impl From<String> for Run {
-    fn from(cmdtext: String) -> Self {
-        Run {
-            cmdtext,
-            log: vec![],
-        }
-    }
-}
-
 impl Run {
-    pub fn command(&self) -> &str {
-        &self.cmdtext
+    pub fn format_header<N>(&self, max_width: N) -> &str
+    where
+        usize: From<N>,
+    {
+        FormatRows::new(usize::from(max_width), &self.header)
+            .next()
+            .unwrap()
     }
 
-    pub fn log_len(&self) -> usize {
-        self.log.len()
-    }
-
-    pub fn format_log(&self, max_width: usize) -> impl Iterator<Item = (LogItemSource, &str)> {
+    pub fn format_log<N>(
+        &self,
+        max_width: N,
+    ) -> impl DoubleEndedIterator<Item = (LogItemSource, &str)>
+    where
+        usize: From<N>,
+    {
+        let max_width = usize::from(max_width);
         self.log.iter().flat_map(move |LogItem { source, text }| {
-            use crate::formatrows::FormatRows;
-
-            FormatRows::new(max_width, text.as_str()).map(|row| (*source, row))
+            FormatRows::new(max_width, text.as_str())
+                .map(|row| (*source, row))
+                .collect::<Vec<_>>()
+                .into_iter()
         })
     }
 

@@ -18,7 +18,7 @@ where
         if cmdtext == "exit" {
             self.evs.send_quit()?;
         } else if !cmdtext.is_empty() {
-            let mut run = Run::from(cmdtext.to_string());
+            let mut run = Run::new(cmdtext.to_string());
             if let Some(e) = self.parse_and_launch(cmdtext).err() {
                 run.log_execution_error(e)
             }
@@ -29,6 +29,10 @@ where
 
     pub fn handle_event(&mut self, event: Event) -> anyhow::Result<()> {
         event.insert_into(&mut self.runs[..])
+    }
+
+    pub fn runs(&self) -> impl DoubleEndedIterator<Item = &Run> {
+        self.runs.iter()
     }
 
     fn parse_and_launch(&self, cmdtext: &str) -> anyhow::Result<()> {
