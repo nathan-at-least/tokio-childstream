@@ -24,7 +24,7 @@ impl UI {
             stdout,
             inbuf,
         };
-        me.display_prompt("$ ")?;
+        me.display_prompt("> ")?;
         Ok(me)
     }
 
@@ -61,7 +61,11 @@ impl UI {
                 use crossterm::event::KeyCode::{Char, Enter};
 
                 match code {
-                    Enter => self.runner.handle_command(&self.inbuf),
+                    Enter => {
+                        self.runner.handle_command(&self.inbuf)?;
+                        self.display_prompt("> ")?;
+                        Ok(())
+                    }
                     Char(c) => {
                         self.inbuf.push(c);
 
@@ -82,10 +86,12 @@ impl UI {
     fn display_prompt(&mut self, prompt: &str) -> anyhow::Result<()> {
         use crossterm::{cursor, style, terminal, QueueableCommand};
 
+        self.inbuf.clear();
         let (_, rows) = terminal::size()?;
         self.stdout
             .queue(style::SetBackgroundColor(style::Color::Reset))?
             .queue(cursor::MoveTo(0, rows - 1))?
+            .queue(terminal::Clear(terminal::ClearType::CurrentLine))?
             .write_all(prompt.as_bytes())?;
         self.stdout.flush()?;
         Ok(())
