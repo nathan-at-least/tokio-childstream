@@ -38,10 +38,12 @@ impl Run {
         self.log.len()
     }
 
-    pub fn log_items(&self) -> impl Iterator<Item = (LogItemSource, &str)> {
-        self.log
-            .iter()
-            .map(|LogItem { source, text }| (*source, text.as_str()))
+    pub fn format_log(&self, max_width: usize) -> impl Iterator<Item = (LogItemSource, &str)> {
+        self.log.iter().flat_map(move |LogItem { source, text }| {
+            use crate::formatrows::FormatRows;
+
+            FormatRows::new(max_width, text.as_str()).map(|row| (*source, row))
+        })
     }
 
     pub(crate) fn log_execution_error(&mut self, error: anyhow::Error) {
