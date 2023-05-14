@@ -1,6 +1,7 @@
 [workspace]
 members = [
   "bytelinebuf",
+  "exoshell/command",
   "exoshell/main",
   "exoshell/event-queue",
   "iomux",

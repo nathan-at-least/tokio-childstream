@@ -21,8 +21,8 @@ impl Runner {
             self.evs.send_quit()?;
             Ok(())
         } else {
-            use crate::cmd::Command;
             use crate::event::ChildEvent;
+            use exoshell_command::Command;
             use futures::stream::StreamExt;
 
             let cmd: Command = cmdtext.parse()?;
