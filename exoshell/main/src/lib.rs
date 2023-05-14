@@ -1,6 +1,5 @@
 mod cleanup;
 pub mod cli;
-mod cmd;
 mod event;
 mod mainloop;
 mod runner;

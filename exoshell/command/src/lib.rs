@@ -1,11 +1,14 @@
+//! Parse and launch external commands
 use std::str::FromStr;
 use tokio_childstream::ChildStream;
 
+/// A [Command] can be parsed via [FromStr] and spawned into a [ChildStream]
 #[derive(Debug)]
 pub struct Command(tokio::process::Command);
 
 impl Command {
-    pub(crate) fn spawn(mut self) -> anyhow::Result<ChildStream> {
+    /// Spawn into a [ChildStream]
+    pub fn spawn(mut self) -> anyhow::Result<ChildStream> {
         use tokio_childstream::CommandExt;
 
         let stream = self.0.spawn_stream(true)?;
