@@ -43,6 +43,7 @@ impl UI {
         use Event::*;
 
         match event {
+            Tick(_) => self.display_runs(),
             Terminal(evres) => {
                 let event = evres?;
                 self.handle_ct_event(event)

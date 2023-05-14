@@ -4,9 +4,11 @@ use crate::ui::UI;
 pub(crate) async fn main_loop() -> anyhow::Result<()> {
     use crate::cleanup::CleanupWith;
     use crate::Runner;
+    use tokio_interval_stream::IntoIntervalStream;
 
     let (reader, sender) = event::init_queue();
 
+    sender.send_stream(tokio::time::Duration::from_millis(200).into_interval_stream());
     sender.send_stream(crossterm::event::EventStream::default());
 
     let mut ui = UI::new(Runner::new(sender.clone()))?;
