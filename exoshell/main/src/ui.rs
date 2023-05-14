@@ -26,7 +26,7 @@ impl UI {
             stdout,
             inbuf,
         };
-        me.display_prompt(PROMPT)?;
+        me.display_prompt()?;
         Ok(me)
     }
 
@@ -67,18 +67,12 @@ impl UI {
                     Enter => {
                         self.runner.handle_command(&self.inbuf)?;
                         self.display_runs()?;
-                        self.display_prompt(PROMPT)?;
-                        Ok(())
+                        self.inbuf.clear();
+                        self.display_prompt()
                     }
                     Char(c) => {
                         self.inbuf.push(c);
-
-                        // Display it on screen:
-                        let mut bytes = [0u8; 4];
-                        c.encode_utf8(&mut bytes);
-                        self.stdout.write_all(&bytes[..c.len_utf8()])?;
-                        self.stdout.flush()?;
-                        Ok(())
+                        self.display_prompt()
                     }
                     _ => Ok(()),
                 }
@@ -119,15 +113,13 @@ impl UI {
             let row = u16::try_from(rows - 2 - i).unwrap();
             self.blit_line(cols, row, &line)?;
         }
-        self.stdout.flush()?;
-
-        Ok(())
+        self.display_prompt()
     }
 
-    fn display_prompt(&mut self, prompt: &str) -> anyhow::Result<()> {
-        self.inbuf.clear();
+    fn display_prompt(&mut self) -> anyhow::Result<()> {
+        let inbuf = &self.inbuf;
         let (cols, rows) = terminal::size()?;
-        self.blit_line(cols, rows - 1, prompt)?;
+        self.blit_line(cols, rows - 1, &format!("{PROMPT}{inbuf}"))?;
         self.stdout.flush()?;
         Ok(())
     }
