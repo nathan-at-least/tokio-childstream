@@ -1,6 +1,6 @@
+use crate::event::Event;
 use crate::screen;
 use crate::Runner;
-use crossterm::event::Event;
 use std::io::{Stdout, Write};
 
 const WELCOME: &str = "🐢 Entering the exoshell…\n";
@@ -37,7 +37,19 @@ impl UI {
         Ok(())
     }
 
-    pub(crate) fn handle_event(&mut self, ev: Event) -> anyhow::Result<()> {
+    pub(crate) fn handle_event(&mut self, event: Event) -> anyhow::Result<()> {
+        use Event::*;
+
+        match event {
+            Terminal(evres) => {
+                let event = evres?;
+                self.handle_ct_event(event)
+            }
+            Child(event) => self.runner.handle_event(event),
+        }
+    }
+
+    fn handle_ct_event(&mut self, ev: crossterm::event::Event) -> anyhow::Result<()> {
         use crossterm::event::{Event::Key, KeyEvent, KeyEventKind};
 
         match ev {

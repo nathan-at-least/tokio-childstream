@@ -18,18 +18,8 @@ pub(crate) async fn main_loop() -> anyhow::Result<()> {
 }
 
 pub(crate) async fn main_loop_inner(mut reader: EventReader, ui: &mut UI) -> anyhow::Result<()> {
-    use crate::event::Event::*;
-
     while let Some(event) = reader.next().await {
-        match event {
-            Terminal(evres) => {
-                let ev = evres?;
-                ui.handle_event(ev)?;
-            }
-            other => {
-                return Err(anyhow::anyhow!("not yet implemented {other:#?}"));
-            }
-        }
+        ui.handle_event(event)?;
     }
     Ok(())
 }
