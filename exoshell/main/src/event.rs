@@ -1,12 +1,10 @@
-#[derive(Debug, derive_more::From)]
-#[from(forward)]
-pub(crate) enum MainLoopEvent {
-    Exit,
-    App(AppEvent),
-}
+pub(crate) type EventReader = exoshell_event_queue::Reader<Event>;
+pub(crate) type EventSender = exoshell_event_queue::Sender<Event>;
 
-#[derive(Debug, derive_more::From)]
-pub(crate) enum AppEvent {
+pub(crate) use exoshell_event_queue::init as init_queue;
+
+#[derive(Debug, derive_more::From, derive_more::TryInto)]
+pub(crate) enum Event {
     Terminal(std::io::Result<crossterm::event::Event>),
     Child(ChildEvent),
 }

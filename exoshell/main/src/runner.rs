@@ -1,13 +1,13 @@
-use crate::eventq;
+use crate::event::EventSender;
 
 #[derive(Debug)]
 pub struct Runner {
     runix: usize,
-    evs: eventq::Sender,
+    evs: EventSender,
 }
 
-impl From<eventq::Sender> for Runner {
-    fn from(evs: eventq::Sender) -> Self {
+impl From<EventSender> for Runner {
+    fn from(evs: EventSender) -> Self {
         Runner { runix: 0, evs }
     }
 }
@@ -18,7 +18,7 @@ impl Runner {
         if cmdtext.is_empty() {
             Ok(())
         } else if cmdtext == "exit" {
-            self.evs.send(crate::event::MainLoopEvent::Exit)?;
+            self.evs.send_quit()?;
             Ok(())
         } else {
             use crate::cmd::Command;
@@ -30,7 +30,7 @@ impl Runner {
             let runix = self.runix;
             self.runix += 1;
             self.evs
-                .add_producer(stream.map(move |ev| ChildEvent::new(runix, ev)));
+                .send_stream(stream.map(move |ev| ChildEvent::new(runix, ev)));
             Ok(())
         }
     }
