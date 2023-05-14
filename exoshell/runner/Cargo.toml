@@ -21,3 +21,6 @@ version = "0.1.0"
 [dependencies.tokio-childstream]
 path = "../../tokio-childstream"
 version = "0.1.1"
+
+[dev-dependencies]
+test-case.workspace = true

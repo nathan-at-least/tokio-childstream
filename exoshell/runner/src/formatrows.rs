@@ -21,8 +21,11 @@ impl<'a> Iterator for FormatRows<'a> {
             }
 
             let (item, nextbuf) = self.buf.split_at(byteix);
-            self.buf = nextbuf;
+            self.buf = nextbuf.strip_prefix('\n').unwrap_or(nextbuf);
             Some(item)
         }
     }
 }
+
+#[cfg(test)]
+mod tests;
