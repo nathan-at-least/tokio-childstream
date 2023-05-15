@@ -13,16 +13,16 @@ crossterm.workspace = true
 derive_more.workspace = true
 derive-new.workspace = true
 futures.workspace = true
-tokio = { workspace = true, features = ["rt", "macros"] }
-
-[dependencies.exoshell-command]
-path = "../command"
-version = "0.1.0"
+tokio = { workspace = true, features = ["rt", "macros", "time"] }
 
 [dependencies.exoshell-event-queue]
 path = "../event-queue"
 version = "0.1.0"
 
-[dependencies.tokio-childstream]
-path = "../../tokio-childstream"
+[dependencies.exoshell-runner]
+path = "../runner"
+version = "0.1.0"
+
+[dependencies.tokio-interval-stream]
+path = "../../tokio-interval-stream"
 version = "0.1.0"

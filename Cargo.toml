@@ -2,10 +2,12 @@
 members = [
   "bytelinebuf",
   "exoshell/command",
-  "exoshell/main",
   "exoshell/event-queue",
+  "exoshell/main",
+  "exoshell/runner",
   "iomux",
   "tokio-childstream",
+  "tokio-interval-stream",
 ]
 
 [workspace.package]
