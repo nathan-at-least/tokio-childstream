@@ -1,54 +1,57 @@
+use crate::display::Display;
 use crate::event::Event;
-use crate::screen;
+use crate::termsize::TermSize;
 use crate::Runner;
-use crossterm::terminal;
-use std::io::{Stdout, Write};
+use exoshell_runner::{Run, Status};
 
-const WELCOME: &str = "🐢 Entering the exoshell…\n";
-const GOODBYE: &str = "🐢 Until next time! 👋\n";
-const PROMPT: &str = "> ";
+const HEADER_INDICATOR: char = '>';
+const VERTICAL_TRUNCATION: char = '⋮';
 
 pub(crate) struct UI {
     runner: Runner,
-    stdout: Stdout,
+    display: Display,
     inbuf: String,
+    size: TermSize,
 }
 
 impl UI {
     pub(crate) fn new(runner: Runner) -> anyhow::Result<Self> {
+        let display = Display::new()?;
         let inbuf = String::new();
-        let mut stdout = crate::tty::get()?;
-        stdout.write_all(WELCOME.as_bytes())?;
-        screen::setup(&mut stdout)?;
+        let size = TermSize::new()?;
 
         let mut me = UI {
             runner,
-            stdout,
+            display,
             inbuf,
+            size,
         };
         me.display_prompt()?;
         Ok(me)
     }
 
     pub(crate) fn cleanup(&mut self) -> anyhow::Result<()> {
-        screen::exit(&mut self.stdout)
+        self.display.cleanup()
     }
 
     pub(crate) fn goodbye(&mut self) -> anyhow::Result<()> {
-        self.stdout.write_all(GOODBYE.as_bytes())?;
-        Ok(())
+        self.display.goodbye()
     }
 
     pub(crate) fn handle_event(&mut self, event: Event) -> anyhow::Result<()> {
         use Event::*;
 
         match event {
-            Tick(_) => self.display_runs(),
+            Tick(_) => Ok(()),
+
             Terminal(evres) => {
                 let event = evres?;
                 self.handle_ct_event(event)
             }
-            Child(event) => self.runner.handle_event(event),
+            Child(event) => {
+                self.runner.handle_event(event)?;
+                self.display_runs()
+            }
         }
     }
 
@@ -66,8 +69,8 @@ impl UI {
                 match code {
                     Enter => {
                         self.runner.handle_command(&self.inbuf)?;
-                        self.display_runs()?;
                         self.inbuf.clear();
+                        self.display_runs()?;
                         self.display_prompt()
                     }
                     Char(c) => {
@@ -82,58 +85,95 @@ impl UI {
     }
 
     fn display_runs(&mut self) -> anyhow::Result<()> {
-        // TODO: This is too messy with excessive clones
-        let (cols, rows) = terminal::size()?;
-        let childcols = cols - 1; // Cut off 1 for indicator column
-        let rows = usize::from(rows);
-        let mut rowtexts = vec![];
+        self.update_size()?;
+
+        let mut row_bottom = self.size.rows() - 1;
 
         for run in self.runner.runs().rev() {
-            for (source, line) in run.format_log(childcols).rev() {
-                use exoshell_runner::LogItemSource::*;
+            // BUG: log_length is lines != len of formatted log lines for long lines
+            let len_full = run.log_length() + 1; // 1 for header line
 
-                let indicator = match source {
-                    ExecutionError => '❌',
-                    ChildIO => '❌',
-                    ChildOut => ' ',
-                    ChildErr => '⚠',
-                    ChildExit => 'ⓘ',
-                };
-                rowtexts.push(format!("{indicator}{line}"));
+            let (row_top, truncate) = if len_full > usize::from(row_bottom) {
+                (0, true)
+            } else {
+                (row_bottom - u16::try_from(len_full)?, false)
+            };
+
+            self.display
+                .move_to_row(row_top)?
+                .write_glyph_line(HEADER_INDICATOR, &format_header(run, self.size))?;
+
+            if truncate {
+                // -1 from half includes 1 row for header and 1 for mid-truncation
+                let len_half = (row_bottom - row_top) / 2 - 1;
+
+                self.display
+                    .write_glyph_lines(
+                        run.format_log(self.size.cols_log())
+                            .take(usize::from(len_half)),
+                    )?
+                    .write_glyph_line(VERTICAL_TRUNCATION, "")?
+                    .write_glyph_lines(
+                        run.format_log(self.size.cols_log())
+                            .skip(run.log_length() - usize::from(len_half)),
+                    )?;
+            } else {
+                self.display
+                    .write_glyph_lines(run.format_log(self.size.cols_log()))?;
             }
-            let header = run.format_header(childcols);
-            rowtexts.push(format!("-{header}"));
-            if rowtexts.len() + 1 == rows {
+
+            row_bottom = row_top;
+            if row_bottom == 0 {
                 break;
             }
         }
 
-        for (i, line) in rowtexts.into_iter().enumerate() {
-            assert!(rows >= 2 + i, "rows {rows:?}, i {i:?}");
-            let row = u16::try_from(rows - 2 - i).unwrap();
-            self.blit_line(cols, row, &line)?;
-        }
         self.display_prompt()
     }
 
     fn display_prompt(&mut self) -> anyhow::Result<()> {
         let inbuf = &self.inbuf;
-        let (cols, rows) = terminal::size()?;
-        self.blit_line(cols, rows - 1, &format!("{PROMPT}{inbuf}"))?;
-        self.stdout.flush()?;
+        self.display
+            .move_to_row(self.size.rows() - 1)?
+            .write_glyph_line(HEADER_INDICATOR, inbuf)?
+            .update()?;
         Ok(())
     }
 
-    fn blit_line(&mut self, cols: u16, row: u16, line: &str) -> anyhow::Result<()> {
-        use crossterm::{cursor, style, QueueableCommand};
-
-        assert!(!line.contains('\n'), "{line:?}");
-        assert!(line.chars().count() <= usize::from(cols), "{line:?}");
-        self.stdout
-            .queue(style::SetBackgroundColor(style::Color::Reset))?
-            .queue(cursor::MoveTo(0, row))?
-            .queue(terminal::Clear(terminal::ClearType::CurrentLine))?
-            .write_all(line.as_bytes())?;
+    fn update_size(&mut self) -> anyhow::Result<()> {
+        self.size = TermSize::new()?;
         Ok(())
+    }
+}
+
+fn format_header(run: &Run, size: TermSize) -> String {
+    let status = status_info(run);
+    let cutoff = usize::from(size.cols_log()) - status.chars().count();
+    let cmdtext = run.command();
+    let mut s = String::new();
+    if cmdtext.chars().count() > cutoff {
+        s.extend(cmdtext.chars().take(cutoff - 1));
+        s.push('…');
+    } else {
+        s.push_str(cmdtext);
+        for _ in cmdtext.len()..cutoff {
+            s.push(' ');
+        }
+    }
+    s.push_str(&status);
+    assert_eq!(s.len(), usize::from(size.cols_log()));
+    s
+}
+
+fn status_info(run: &Run) -> String {
+    if let Status::Exited(es) = run.status() {
+        format!(
+            "[exit {}]",
+            es.code()
+                .map(|n| n.to_string())
+                .unwrap_or_else(|| "?".to_string())
+        )
+    } else {
+        "".to_string()
     }
 }

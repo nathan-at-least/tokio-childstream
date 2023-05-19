@@ -2,63 +2,75 @@ use crate::formatrows::FormatRows;
 
 #[derive(Debug, derive_new::new)]
 pub struct Run {
-    header: String,
+    cmdtext: String,
     #[new(default)]
-    log: Vec<LogItem>,
+    status: Status,
+    #[new(default)]
+    log: Vec<(LogItemSource, String)>,
 }
 
-#[derive(Debug)]
-struct LogItem {
-    source: LogItemSource,
-    text: String,
+#[derive(Debug, Default)]
+pub enum Status {
+    #[default]
+    Running,
+    FailedToLaunch,
+    Exited(std::process::ExitStatus),
 }
 
 #[derive(Copy, Clone, Debug)]
 pub enum LogItemSource {
-    ExecutionError,
+    FailedToLaunch,
     ChildIO,
     ChildOut,
     ChildErr,
-    ChildExit,
+    LineContinuation,
 }
-use LogItemSource::*;
 
 impl Run {
-    pub fn format_header<N>(&self, max_width: N) -> &str
-    where
-        usize: From<N>,
-    {
-        FormatRows::new(usize::from(max_width), &self.header)
-            .next()
-            .unwrap()
+    pub fn status(&self) -> &Status {
+        &self.status
     }
 
-    pub fn format_log<N>(
-        &self,
-        max_width: N,
-    ) -> impl DoubleEndedIterator<Item = (LogItemSource, &str)>
+    pub fn command(&self) -> &str {
+        &self.cmdtext
+    }
+
+    pub fn log_length(&self) -> usize {
+        self.log.len()
+    }
+
+    pub fn format_log<N>(&self, max_width: N) -> impl Iterator<Item = (LogItemSource, &str)>
     where
         usize: From<N>,
     {
         let max_width = usize::from(max_width);
-        self.log.iter().flat_map(move |LogItem { source, text }| {
+        self.log.iter().flat_map(move |(source, text)| {
             FormatRows::new(max_width, text.as_str())
-                .map(|row| (*source, row))
-                .collect::<Vec<_>>()
+                .fold(vec![], |mut rows, row| {
+                    rows.push((
+                        if rows.is_empty() {
+                            *source
+                        } else {
+                            LogItemSource::LineContinuation
+                        },
+                        row,
+                    ));
+                    rows
+                })
                 .into_iter()
         })
     }
 
     pub(crate) fn log_execution_error(&mut self, error: anyhow::Error) {
-        self.log.push(LogItem {
-            source: ExecutionError,
-            text: format!("{error:#}"),
-        });
+        self.status = Status::FailedToLaunch;
+        self.log
+            .push((LogItemSource::FailedToLaunch, format!("{error:#}")));
     }
 
     pub(crate) fn log_child_item(&mut self, item: tokio_childstream::StreamItem) {
         use tokio_childstream::ChildEvent::*;
         use tokio_childstream::OutputSource::*;
+        use LogItemSource::*;
 
         fn stringify<B>(bytes: B) -> String
         where
@@ -67,13 +79,19 @@ impl Run {
             String::from_utf8_lossy(bytes.as_ref()).into_owned()
         }
 
-        let (source, text) = match item {
-            Ok(Output(Stdout, bytes)) => (ChildOut, stringify(bytes)),
-            Ok(Output(Stderr, bytes)) => (ChildErr, stringify(bytes)),
-            Ok(Exit(status)) => (ChildExit, format!("{status:?}")),
-            Err(e) => (ChildIO, format!("{e}")),
-        };
-
-        self.log.push(LogItem { source, text });
+        match item {
+            Ok(Output(Stdout, bytes)) => {
+                self.log.push((ChildOut, stringify(bytes)));
+            }
+            Ok(Output(Stderr, bytes)) => {
+                self.log.push((ChildErr, stringify(bytes)));
+            }
+            Ok(Exit(status)) => {
+                self.status = Status::Exited(status);
+            }
+            Err(e) => {
+                self.log.push((ChildIO, format!("{e}")));
+            }
+        }
     }
 }
