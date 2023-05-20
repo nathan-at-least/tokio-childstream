@@ -87,7 +87,7 @@ impl UI {
     fn display_runs(&mut self) -> anyhow::Result<()> {
         self.update_size()?;
 
-        let mut row_bottom = self.size.rows() - 1;
+        let mut row_bottom = self.size.last_row();
 
         for run in self.runner.runs().rev() {
             // BUG: log_length is lines != len of formatted log lines for long lines
@@ -134,7 +134,7 @@ impl UI {
     fn display_prompt(&mut self) -> anyhow::Result<()> {
         let inbuf = &self.inbuf;
         self.display
-            .move_to_row(self.size.rows() - 1)?
+            .move_to_row(self.size.last_row())?
             .write_glyph_line(HEADER_INDICATOR, inbuf)?
             .update()?;
         Ok(())

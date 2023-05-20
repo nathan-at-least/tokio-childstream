@@ -70,7 +70,7 @@ impl Display {
 
         let size = TermSize::new()?;
         if self.row < size.last_row() {
-            self.row += 1;
+            self.move_to_row(self.row + 1)?;
         }
 
         Ok(self)

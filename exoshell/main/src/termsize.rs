@@ -19,10 +19,6 @@ impl TermSize {
         self.cols - 1
     }
 
-    pub fn rows(&self) -> u16 {
-        self.rows
-    }
-
     pub fn last_row(&self) -> u16 {
         self.rows - 1
     }

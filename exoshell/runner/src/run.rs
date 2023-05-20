@@ -35,6 +35,10 @@ impl Run {
         &self.cmdtext
     }
 
+    pub fn log(&self) -> &[(LogItemSource, String)] {
+        &self.log
+    }
+
     pub fn log_length(&self) -> usize {
         self.log.len()
     }
