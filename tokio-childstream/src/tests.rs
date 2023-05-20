@@ -71,6 +71,36 @@ async fn hello_world(line_buffering: bool) {
 #[test_case(false ; "no-line-buffering")]
 #[test_case(true ; "line-buffering")]
 #[tokio::test]
+async fn two_lines(line_buffering: bool) {
+    let mut stream = Command::new("echo")
+        .arg("-e")
+        .arg(r#"hello world\nsecond line"#)
+        .spawn_stream(line_buffering)
+        .unwrap();
+    let mut found_outputs = vec![];
+    let mut found_exit = false;
+    while let Some(event) = stream.next().await {
+        match event {
+            Ok(Output(Stdout, bytes)) => {
+                found_outputs.push(Vec::from(bytes.as_ref()));
+            }
+            Ok(Exit(status)) => {
+                assert_eq!(Some(0), status.code(),);
+                found_exit = true;
+            }
+            other => panic!("Unexpected event: {other:?}"),
+        }
+    }
+    assert_eq!(
+        vec![&b"hello world\n"[..], &b"second line"[..]],
+        found_outputs
+    );
+    assert!(found_exit);
+}
+
+#[test_case(false ; "no-line-buffering")]
+#[test_case(true ; "line-buffering")]
+#[tokio::test]
 async fn stderr_hello_world(line_buffering: bool) {
     let mut stream = Command::new("bash")
         .arg("-c")
