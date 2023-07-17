@@ -8,3 +8,6 @@ mod stream;
 
 #[cfg(feature = "stream")]
 pub use self::stream::ByteLineStream;
+
+#[cfg(any(test, feature = "testutil"))]
+pub mod testutil;

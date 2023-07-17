@@ -78,3 +78,6 @@ impl<'a> Iterator for DrainLines<'a> {
         self.0.next()
     }
 }
+
+#[cfg(test)]
+mod tests;

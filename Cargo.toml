@@ -27,3 +27,13 @@ pin-project = "1.0.12"
 test-case = "3.1.0"
 tokio = "1.27.0"
 tokio-util = { version = "0.7.7", features = ["io"] }
+
+# Internal crates:
+bytelinebuf = { path = "bytelinebuf" }
+exoshell-command = { path = "exoshell/command" }
+exoshell-event-queue = { path = "exoshell/event-queue" }
+exoshell-main = { path = "exoshell/main" }
+exoshell-runner = { path = "exoshell/runner" }
+iomux = { path = "iomux" }
+tokio-childstream = { path = "tokio-childstream" }
+tokio-interval-stream = { path = "tokio-interval-stream" }

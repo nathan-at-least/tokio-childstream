@@ -7,8 +7,5 @@ homepage.workspace = true
 
 [dependencies]
 anyhow.workspace = true
+tokio-childstream.workspace = true
 tokio = { workspace = true, features = ["process"] }
-
-[dependencies.tokio-childstream]
-path = "../../tokio-childstream"
-version = "0.1.0"
