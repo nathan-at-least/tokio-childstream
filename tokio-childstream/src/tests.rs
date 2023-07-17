@@ -91,9 +91,23 @@ async fn two_lines(line_buffering: bool) {
             other => panic!("Unexpected event: {other:?}"),
         }
     }
+    let expected = if line_buffering {
+        vec![&b"hello world\n"[..], &b"second line\n"[..]]
+    } else {
+        vec![&b"hello world\nsecond line\n"[..]]
+    };
     assert_eq!(
-        vec![&b"hello world\n"[..], &b"second line"[..]],
+        expected,
+        found_outputs,
+        "\n  --- expected ---\n{:#?}\n  --- actual ---\n{:#?}\n",
+        expected
+            .iter()
+            .map(|b| String::from_utf8_lossy(b).to_owned())
+            .collect::<Vec<_>>(),
         found_outputs
+            .iter()
+            .map(|b| String::from_utf8_lossy(b).to_owned())
+            .collect::<Vec<_>>(),
     );
     assert!(found_exit);
 }
