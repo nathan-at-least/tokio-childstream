@@ -7,20 +7,11 @@ homepage.workspace = true
 
 [dependencies]
 anyhow.workspace = true
-futures.workspace = true
 derive-new.workspace = true
-
-[dependencies.exoshell-command]
-path = "../command"
-version = "0.1.0"
-
-[dependencies.exoshell-event-queue]
-path = "../event-queue"
-version = "0.1.0"
-
-[dependencies.tokio-childstream]
-path = "../../tokio-childstream"
-version = "0.1.1"
+exoshell-command.workspace = true
+exoshell-event-queue.workspace = true
+futures.workspace = true
+tokio-childstream.workspace = true
 
 [dev-dependencies]
 test-case.workspace = true

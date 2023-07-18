@@ -12,8 +12,15 @@ all-features = true
 [features]
 default = []
 stream = ["futures", "pin-project"]
+testutil = []
 
 [dependencies]
 bytes.workspace = true
 futures = { workspace = true, optional = true }
 pin-project = { workspace = true, optional = true }
+
+[dev-dependencies]
+futures.workspace = true
+pin-project.workspace = true
+test-case.workspace = true
+tokio = { workspace = true, features = [ "macros", "rt" ] }

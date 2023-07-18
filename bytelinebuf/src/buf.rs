@@ -11,9 +11,9 @@ pub struct ByteLineBuf {
 }
 
 impl ByteLineBuf {
-    /// Return an iterator that drains all complete lines, each represented as `Vec<u8>`
-    pub fn drain_lines(&mut self) -> DrainLines<'_> {
-        DrainLines(self.lines.drain(..))
+    /// Remove and return the first complete pending line, if any
+    pub fn pop_line(&mut self) -> Option<Vec<u8>> {
+        self.lines.pop_front()
     }
 
     /// Convert any bytes remaining in `self` into `Vec<u8>`
@@ -67,14 +67,34 @@ impl Extend<Bytes> for ByteLineBuf {
     }
 }
 
-/// Drain complete `b'\n'`-terminated lines from a [ByteLineBuf]
-pub struct DrainLines<'a>(std::collections::vec_deque::Drain<'a, Vec<u8>>);
+#[derive(Debug)]
+pub struct IntoIter(std::collections::vec_deque::IntoIter<Vec<u8>>);
 
-impl<'a> Iterator for DrainLines<'a> {
-    /// A bytes terminated by `b'\n'`
+impl IntoIterator for ByteLineBuf {
+    type Item = Vec<u8>;
+    type IntoIter = IntoIter;
+
+    fn into_iter(self) -> Self::IntoIter {
+        let ByteLineBuf {
+            mut lines,
+            fragment,
+        } = self;
+
+        if !fragment.is_empty() {
+            lines.push_back(fragment);
+        }
+
+        IntoIter(lines.into_iter())
+    }
+}
+
+impl Iterator for IntoIter {
     type Item = Vec<u8>;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.0.next()
     }
 }
+
+#[cfg(test)]
+mod tests;

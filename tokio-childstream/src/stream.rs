@@ -14,13 +14,13 @@ use tokio::process::Child;
 ///
 /// If line-buffering is enabled via [ChildStream::new] or
 /// [CommandExt::spawn_stream](crate::CommandExt::spawn_stream), each
-/// returned [ChildEvent::Output] bytes is guaranteed to terminate with
+/// returned [ChildEvent::Output](crate::ChildEvent::Output) bytes is guaranteed to terminate with
 /// `'\n'` except the last.
 ///
 /// If the child output terminates with `'\n'` then the last
-/// [ChildEvent::Output] will contain an empty [Bytes].
+/// [ChildEvent::Output](crate::ChildEvent::Output) will contain an empty [Bytes](bytes::Bytes).
 ///
-/// Without line-buffering, the [Bytes] items contain an unspecified
+/// Without line-buffering, the [Bytes](bytes::Bytes) items contain an unspecified
 /// segmentation of child output.
 ///
 /// The `From<tokio::process::Child>` impl does not use line-buffering.
@@ -45,7 +45,7 @@ impl ChildStream {
     /// Return the OS id of the child
     ///
     /// ⚠ Warning: This is invalid after the child exits  and may refer to a different arbitrary
-    /// process on some OSes. This may occur prior to [ChildEvent::Exit] is yielded.
+    /// process on some OSes. This may occur prior to [ChildEvent::Exit](crate::ChildEvent::Exit) is yielded.
     pub fn id(&self) -> u32 {
         self.id
     }

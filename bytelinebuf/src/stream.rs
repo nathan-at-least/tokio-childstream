@@ -62,6 +62,23 @@ where
     Complete,
 }
 
+impl<'pin, S, T, E> StateProj<'pin, S, T, E>
+where
+    S: Stream<Item = Result<T, E>>,
+    T: IntoIterator<Item = u8>,
+    T: From<Vec<u8>>,
+{
+    fn mut_buf(&mut self) -> Option<&mut ByteLineBuf> {
+        use StateProj::*;
+
+        match self {
+            Active { buf, .. } => Some(buf),
+            WindDown { buf } => Some(buf),
+            Complete => None,
+        }
+    }
+}
+
 impl<S, T, E> Stream for State<S, T, E>
 where
     S: Stream<Item = Result<T, E>>,
@@ -73,65 +90,56 @@ where
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         use StateProj::*;
 
-        let optnewstate = {
-            if let Active { buf, upstream } = self.as_mut().project() {
-                match upstream.poll_next(cx) {
-                    Poll::Ready(optitem) => {
-                        if let Some(res) = optitem {
-                            match res {
-                                Ok(bytes) => {
-                                    buf.extend(bytes);
-                                    None
-                                }
-                                error => {
-                                    return Poll::Ready(Some(error));
-                                }
+        loop {
+            let optnewstate = {
+                let mut projself = self.as_mut().project();
+
+                // First always ensure buf is drained of any ready lines:
+                if let Some(buf) = projself.mut_buf() {
+                    if let Some(line) = buf.pop_line() {
+                        return Poll::Ready(Some(Ok(T::from(line))));
+                    }
+                }
+
+                match projself {
+                    Active { buf, upstream } => match upstream.poll_next(cx) {
+                        // Precondition, buf is line-drained above.
+                        Poll::Ready(Some(res)) => match res {
+                            Ok(bytes) => {
+                                buf.extend(bytes);
+                                continue;
                             }
-                        } else {
+                            error => {
+                                return Poll::Ready(Some(error));
+                            }
+                        },
+                        Poll::Ready(None) => {
                             let buf = std::mem::take(buf);
-                            Some(State::WindDown { buf })
+                            Some(State::WindDown { buf }) // optnewstate
+                        }
+                        Poll::Pending => {
+                            return Poll::Pending;
+                        }
+                    },
+                    WindDown { buf } => {
+                        if let Some(r) = std::mem::take(buf).drain_remainder() {
+                            return Poll::Ready(Some(Ok(T::from(r))));
+                        } else {
+                            Some(State::Complete) // optnewstate
                         }
                     }
-
-                    Poll::Pending => None,
+                    Complete => {
+                        return Poll::Ready(None);
+                    }
                 }
-            } else {
-                None
-            }
-        };
+            };
 
-        if let Some(newstate) = optnewstate {
-            self.set(newstate);
+            if let Some(newstate) = optnewstate {
+                self.set(newstate);
+            }
         }
-
-        let (ret, optnewstate) = match self.as_mut().project() {
-            Active { buf, .. } => {
-                if let Some(line) = buf.drain_lines().next() {
-                    (Poll::Ready(Some(Ok(T::from(line)))), None)
-                } else {
-                    (Poll::Pending, None)
-                }
-            }
-            WindDown { buf } => {
-                let optline = buf.drain_lines().next();
-                if let Some(line) = optline {
-                    (Poll::Ready(Some(Ok(T::from(line)))), None)
-                } else {
-                    (
-                        Poll::Ready(
-                            Ok(std::mem::take(buf).drain_remainder().map(T::from)).transpose(),
-                        ),
-                        Some(State::Complete),
-                    )
-                }
-            }
-            Complete => (Poll::Ready(None), None),
-        };
-
-        if let Some(newstate) = optnewstate {
-            self.set(newstate);
-        }
-
-        ret
     }
 }
+
+#[cfg(test)]
+mod tests;

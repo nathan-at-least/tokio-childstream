@@ -71,6 +71,50 @@ async fn hello_world(line_buffering: bool) {
 #[test_case(false ; "no-line-buffering")]
 #[test_case(true ; "line-buffering")]
 #[tokio::test]
+async fn two_lines(line_buffering: bool) {
+    let mut stream = Command::new("echo")
+        .arg("-e")
+        .arg(r#"hello world\nsecond line"#)
+        .spawn_stream(line_buffering)
+        .unwrap();
+    let mut found_outputs = vec![];
+    let mut found_exit = false;
+    while let Some(event) = stream.next().await {
+        match event {
+            Ok(Output(Stdout, bytes)) => {
+                found_outputs.push(Vec::from(bytes.as_ref()));
+            }
+            Ok(Exit(status)) => {
+                assert_eq!(Some(0), status.code(),);
+                found_exit = true;
+            }
+            other => panic!("Unexpected event: {other:?}"),
+        }
+    }
+    let expected = if line_buffering {
+        vec![&b"hello world\n"[..], &b"second line\n"[..]]
+    } else {
+        vec![&b"hello world\nsecond line\n"[..]]
+    };
+    assert_eq!(
+        expected,
+        found_outputs,
+        "\n  --- expected ---\n{:#?}\n  --- actual ---\n{:#?}\n",
+        expected
+            .iter()
+            .map(|b| String::from_utf8_lossy(b).to_owned())
+            .collect::<Vec<_>>(),
+        found_outputs
+            .iter()
+            .map(|b| String::from_utf8_lossy(b).to_owned())
+            .collect::<Vec<_>>(),
+    );
+    assert!(found_exit);
+}
+
+#[test_case(false ; "no-line-buffering")]
+#[test_case(true ; "line-buffering")]
+#[tokio::test]
 async fn stderr_hello_world(line_buffering: bool) {
     let mut stream = Command::new("bash")
         .arg("-c")

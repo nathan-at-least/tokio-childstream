@@ -1,9 +1,12 @@
 mod cleanup;
 pub mod cli;
+mod display;
 mod event;
+mod glyphs;
 mod mainloop;
 mod screen;
 mod status;
+mod termsize;
 mod tty;
 mod ui;
 
