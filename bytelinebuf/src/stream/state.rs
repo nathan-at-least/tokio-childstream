@@ -8,12 +8,7 @@ use std::pin::Pin;
     project = StateProj,
     project_replace = StateReplace,
 )]
-pub(super) enum State<S, T, E>
-where
-    S: Stream<Item = Result<T, E>>,
-    T: IntoIterator<Item = u8>,
-    T: From<Vec<u8>>,
-{
+pub(super) enum State<S> {
     Active {
         buf: ByteLineBuf,
         #[pin]
@@ -25,12 +20,7 @@ where
     Complete,
 }
 
-impl<'pin, S, T, E> StateProj<'pin, S, T, E>
-where
-    S: Stream<Item = Result<T, E>>,
-    T: IntoIterator<Item = u8>,
-    T: From<Vec<u8>>,
-{
+impl<'pin, S> StateProj<'pin, S> {
     fn mut_buf(&mut self) -> Option<&mut ByteLineBuf> {
         use StateProj::*;
 
@@ -42,7 +32,7 @@ where
     }
 }
 
-impl<S, T, E> Stream for State<S, T, E>
+impl<S, T, E> Stream for State<S>
 where
     S: Stream<Item = Result<T, E>>,
     T: IntoIterator<Item = u8>,

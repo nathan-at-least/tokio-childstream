@@ -12,18 +12,9 @@ use std::pin::Pin;
 /// The final item will not have a `b'\n'` terminator. If the final byte
 /// of a stream is `b'\n'` then the final item will be `vec![]`.
 #[pin_project]
-pub struct ByteLineStream<S, T, E>(#[pin] State<S, T, E>)
-where
-    S: Stream<Item = Result<T, E>>,
-    T: IntoIterator<Item = u8>,
-    T: From<Vec<u8>>;
+pub struct ByteLineStream<S>(#[pin] State<S>);
 
-impl<S, T, E> From<S> for ByteLineStream<S, T, E>
-where
-    S: Stream<Item = Result<T, E>>,
-    T: IntoIterator<Item = u8>,
-    T: From<Vec<u8>>,
-{
+impl<S> From<S> for ByteLineStream<S> {
     fn from(upstream: S) -> Self {
         ByteLineStream(State::Active {
             buf: ByteLineBuf::default(),
@@ -31,11 +22,11 @@ where
         })
     }
 }
-impl<S, T, E> Stream for ByteLineStream<S, T, E>
+
+impl<S, T, E> Stream for ByteLineStream<S>
 where
     S: Stream<Item = Result<T, E>>,
-    T: IntoIterator<Item = u8>,
-    T: From<Vec<u8>>,
+    T: IntoIterator<Item = u8> + From<Vec<u8>>,
 {
     type Item = Result<T, E>;
 
