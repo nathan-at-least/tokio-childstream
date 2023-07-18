@@ -1,5 +1,5 @@
-use crate::testutil::assert_byte_vecs_eq;
 use crate::ByteLineStream;
+use bytelinebuf::testutil::assert_byte_vecs_eq;
 use futures::stream::StreamExt;
 use test_case::test_case;
 
