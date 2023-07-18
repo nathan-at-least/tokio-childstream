@@ -49,7 +49,7 @@ fn create_optional_send_task<R>(
 {
     if let Some(out) = optout {
         tokio::task::spawn(async move {
-            use bytelinebuf::ByteLineStream;
+            use bytelinestream::ByteLineStream;
             use tokio_util::io::ReaderStream;
 
             let stream = ReaderStream::new(out);

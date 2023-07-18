@@ -1,5 +1,5 @@
 use super::{PollNextStep, State};
-use crate::ByteLineBuf;
+use bytelinebuf::ByteLineBuf;
 use futures::stream::Stream;
 use futures::task::{Context, Poll};
 use pin_project::pin_project;

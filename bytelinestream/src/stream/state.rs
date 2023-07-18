@@ -1,7 +1,6 @@
 mod active;
 
 pub(super) use self::active::Active;
-use crate::IntoIter;
 use futures::stream::Stream;
 use futures::task::{Context, Poll};
 use pin_project::pin_project;
@@ -13,7 +12,7 @@ use std::pin::Pin;
 )]
 pub(super) enum State<S> {
     Active(#[pin] Active<S>),
-    WindDown(IntoIter),
+    WindDown(bytelinebuf::IntoIter),
 }
 
 impl<S> From<S> for State<S> {

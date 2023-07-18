@@ -1,13 +1,13 @@
 [package]
 name = "tokio-childstream"
 version = "0.1.1"
-description = "Convert a tokio::process::Child into a Stream for stdout, stderr, and exit events."
+description = "Convert a `tokio::process::Child` into a Stream for stdout, stderr, and exit events."
 homepage.workspace = true
 edition.workspace = true
 license.workspace = true
 
 [dependencies]
-bytelinebuf = { workspace = true, features = [ "stream" ] }
+bytelinestream.workspace = true
 bytes.workspace = true
 futures.workspace = true
 pin-project.workspace = true

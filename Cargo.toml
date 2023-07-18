@@ -1,6 +1,7 @@
 [workspace]
 members = [
   "bytelinebuf",
+  "bytelinestream",
   "exoshell/command",
   "exoshell/event-queue",
   "exoshell/main",
@@ -30,6 +31,7 @@ tokio-util = { version = "0.7.7", features = ["io"] }
 
 # Internal crates:
 bytelinebuf = { path = "bytelinebuf" }
+bytelinestream = { path = "bytelinestream" }
 exoshell-command = { path = "exoshell/command" }
 exoshell-event-queue = { path = "exoshell/event-queue" }
 exoshell-main = { path = "exoshell/main" }
