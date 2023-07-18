@@ -1,4 +1,7 @@
-use crate::ByteLineBuf;
+mod active;
+
+pub(super) use self::active::Active;
+use crate::IntoIter;
 use futures::stream::Stream;
 use futures::task::{Context, Poll};
 use pin_project::pin_project;
@@ -9,25 +12,34 @@ use std::pin::Pin;
     project_replace = StateReplace,
 )]
 pub(super) enum State<S> {
-    Active {
-        buf: ByteLineBuf,
-        #[pin]
-        upstream: S,
-    },
-    WindDown {
-        buf: ByteLineBuf,
-    },
-    Complete,
+    Active(#[pin] Active<S>),
+    WindDown(IntoIter),
 }
 
-impl<'pin, S> StateProj<'pin, S> {
-    fn mut_buf(&mut self) -> Option<&mut ByteLineBuf> {
-        use StateProj::*;
+impl<S> From<S> for State<S> {
+    fn from(inner: S) -> Self {
+        State::Active(Active::from(inner))
+    }
+}
 
-        match self {
-            Active { buf, .. } => Some(buf),
-            WindDown { buf } => Some(buf),
-            Complete => None,
+enum PollNextStep<S, T, E> {
+    Cont,
+    Ret(Poll<Option<Result<T, E>>>),
+    NewState(State<S>),
+}
+
+impl<S> State<S> {
+    fn poll_next_step<T, E>(
+        self: &mut Pin<&mut Self>,
+        cx: &mut Context<'_>,
+    ) -> PollNextStep<S, T, E>
+    where
+        S: Stream<Item = Result<T, E>>,
+        T: IntoIterator<Item = u8> + From<Vec<u8>>,
+    {
+        match self.as_mut().project() {
+            StateProj::Active(x) => x.poll_next_state(cx),
+            StateProj::WindDown(x) => PollNextStep::Ret(Poll::Ready(x.next().map(T::from).map(Ok))),
         }
     }
 }
@@ -35,62 +47,24 @@ impl<'pin, S> StateProj<'pin, S> {
 impl<S, T, E> Stream for State<S>
 where
     S: Stream<Item = Result<T, E>>,
-    T: IntoIterator<Item = u8>,
-    T: From<Vec<u8>>,
+    T: IntoIterator<Item = u8> + From<Vec<u8>>,
 {
     type Item = Result<T, E>;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        use StateProj::*;
+        use PollNextStep::*;
 
         loop {
-            let optnewstate = {
-                let mut projself = self.as_mut().project();
-
-                // First always ensure buf is drained of any ready lines:
-                if let Some(buf) = projself.mut_buf() {
-                    if let Some(line) = buf.pop_line() {
-                        return Poll::Ready(Some(Ok(T::from(line))));
-                    }
+            match self.poll_next_step(cx) {
+                Cont => {
+                    continue;
                 }
-
-                match projself {
-                    Active { buf, upstream } => match upstream.poll_next(cx) {
-                        // Precondition, buf is line-drained above.
-                        Poll::Ready(Some(res)) => match res {
-                            Ok(bytes) => {
-                                buf.extend(bytes);
-                                continue;
-                            }
-                            error => {
-                                return Poll::Ready(Some(error));
-                            }
-                        },
-                        Poll::Ready(None) => {
-                            let buf = std::mem::take(buf);
-                            Some(State::WindDown { buf }) // optnewstate
-                        }
-                        Poll::Pending => {
-                            return Poll::Pending;
-                        }
-                    },
-                    WindDown { buf } => {
-                        dbg!(&buf);
-                        if let Some(r) = std::mem::take(buf).drain_remainder() {
-                            dbg!(&r);
-                            return Poll::Ready(Some(Ok(T::from(r))));
-                        } else {
-                            Some(State::Complete) // optnewstate
-                        }
-                    }
-                    Complete => {
-                        return Poll::Ready(None);
-                    }
+                Ret(v) => {
+                    return v;
                 }
-            };
-
-            if let Some(newstate) = optnewstate {
-                self.set(newstate);
+                NewState(s) => {
+                    self.set(s);
+                }
             }
         }
     }

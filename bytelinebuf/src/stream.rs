@@ -1,7 +1,6 @@
 mod state;
 
 use self::state::State;
-use crate::ByteLineBuf;
 use futures::stream::Stream;
 use futures::task::{Context, Poll};
 use pin_project::pin_project;
@@ -16,10 +15,7 @@ pub struct ByteLineStream<S>(#[pin] State<S>);
 
 impl<S> From<S> for ByteLineStream<S> {
     fn from(upstream: S) -> Self {
-        ByteLineStream(State::Active {
-            buf: ByteLineBuf::default(),
-            upstream,
-        })
+        ByteLineStream(State::from(upstream))
     }
 }
 
