@@ -8,9 +8,6 @@ use test_case::test_case;
 fn drain(bytes: &[u8], expected: Vec<&[u8]>) {
     let mut blb = ByteLineBuf::default();
     blb.extend(bytes);
-    let mut actual: Vec<Vec<u8>> = blb.drain_lines().collect();
-    if let Some(tail) = blb.drain_remainder() {
-        actual.push(tail);
-    }
+    let actual: Vec<Vec<u8>> = blb.into_iter().collect();
     assert_byte_vecs_eq(actual, expected);
 }

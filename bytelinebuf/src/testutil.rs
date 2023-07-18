@@ -5,6 +5,9 @@ where
     B: AsRef<[Y]>,
     Y: AsRef<[u8]>,
 {
+    fn bytes_to_string(b: &&[u8]) -> String {
+        String::from_utf8_lossy(b).into_owned()
+    }
     let expected = expected
         .as_ref()
         .iter()
@@ -19,13 +22,7 @@ where
         expected,
         actual,
         "\n -- expected --\n{:#?}\n -- actual --\n{:#?}\n",
-        expected
-            .iter()
-            .map(|b| String::from_utf8_lossy(b).to_owned())
-            .collect::<Vec<_>>(),
-        actual
-            .iter()
-            .map(|b| String::from_utf8_lossy(b).to_owned())
-            .collect::<Vec<_>>()
+        expected.iter().map(bytes_to_string).collect::<Vec<_>>(),
+        actual.iter().map(bytes_to_string).collect::<Vec<_>>()
     );
 }

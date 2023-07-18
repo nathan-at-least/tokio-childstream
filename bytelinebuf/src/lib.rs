@@ -1,12 +1,12 @@
 //! `Iterator` and `Stream` types for splitting bytes on `'\n'`
 mod buf;
 
-pub use self::buf::{ByteLineBuf, DrainLines};
+pub use self::buf::{ByteLineBuf, IntoIter};
 
-#[cfg(feature = "stream")]
+#[cfg(any(test, feature = "stream"))]
 mod stream;
 
-#[cfg(feature = "stream")]
+#[cfg(any(test, feature = "stream"))]
 pub use self::stream::ByteLineStream;
 
 #[cfg(any(test, feature = "testutil"))]
