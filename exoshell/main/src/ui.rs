@@ -131,13 +131,13 @@ fn last_row(termsize: Rect<u16>) -> u16 {
     termsize.height() - 1
 }
 
-fn cols_log(termsize: Rect<u16>) -> u16 {
-    termsize.width() - 1
+fn cols_log(termsize: Rect<u16>) -> usize {
+    termsize.convert_into::<usize>().width() - 1
 }
 
 fn format_header(run: &Run, size: Rect<u16>) -> String {
     let status = status_info(run);
-    let cutoff = usize::from(cols_log(size)) - status.chars().count();
+    let cutoff = cols_log(size) - status.chars().count();
     let cmdtext = run.command();
     let mut s = String::new();
     if cmdtext.chars().count() > cutoff {
@@ -150,7 +150,7 @@ fn format_header(run: &Run, size: Rect<u16>) -> String {
         }
     }
     s.push_str(&status);
-    assert_eq!(s.len(), usize::from(cols_log(size)));
+    assert_eq!(s.len(), cols_log(size));
     s
 }
 

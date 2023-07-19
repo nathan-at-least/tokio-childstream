@@ -21,12 +21,12 @@ where
         self.height
     }
 
-    pub fn convert_into<M>(&self) -> Result<Rect<M>, <M as TryFrom<N>>::Error>
+    pub fn convert_into<M>(&self) -> Rect<M>
     where
-        M: Copy + TryFrom<N>,
+        M: Copy + From<N>,
     {
-        let width = M::try_from(self.width)?;
-        let height = M::try_from(self.height)?;
-        Ok(Rect { width, height })
+        let width = M::from(self.width);
+        let height = M::from(self.height);
+        Rect { width, height }
     }
 }
