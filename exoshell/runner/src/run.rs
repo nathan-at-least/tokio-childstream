@@ -43,12 +43,13 @@ impl Run {
         self.log.len()
     }
 
-    pub fn format_log<N>(&self, max_width: N) -> impl Iterator<Item = (LogItemSource, &str)>
+    pub fn layout_reverse_log<N>(&self, max_width: N) -> impl Iterator<Item = (LogItemSource, &str)>
     where
         usize: From<N>,
     {
         let max_width = usize::from(max_width);
-        self.log.iter().flat_map(move |(source, text)| {
+
+        self.log.iter().rev().flat_map(move |(source, text)| {
             FormatRows::new(max_width, text.as_str())
                 .fold(vec![], |mut rows, row| {
                     rows.push((
@@ -62,6 +63,7 @@ impl Run {
                     rows
                 })
                 .into_iter()
+                .rev()
         })
     }
 
