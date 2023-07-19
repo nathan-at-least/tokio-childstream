@@ -3,6 +3,7 @@ members = [
   "application-paths",
   "bytelinebuf",
   "bytelinestream",
+  "exoshell/aui",
   "exoshell/command",
   "exoshell/event-queue",
   "exoshell/main",
@@ -37,6 +38,7 @@ tracing-subscriber = "0.3.17"
 application-paths = { path = "application-paths" }
 bytelinebuf = { path = "bytelinebuf" }
 bytelinestream = { path = "bytelinestream" }
+exoshell-aui = { path = "exoshell/aui" }
 exoshell-command = { path = "exoshell/command" }
 exoshell-event-queue = { path = "exoshell/event-queue" }
 exoshell-main = { path = "exoshell/main" }

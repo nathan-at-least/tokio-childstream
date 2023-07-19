@@ -1,25 +1,6 @@
-#[derive(Copy, Clone, Debug)]
-pub struct TermSize {
-    cols: u16,
-    rows: u16,
-}
+use exoshell_aui::Rect;
 
-impl TermSize {
-    pub fn new() -> anyhow::Result<Self> {
-        let (cols, rows) = crossterm::terminal::size()?;
-        let me = TermSize { cols, rows };
-        if cols > 0 && rows > 0 {
-            Ok(me)
-        } else {
-            Err(anyhow::anyhow!("invalid terminal size {me:?}"))
-        }
-    }
-
-    pub fn cols_log(&self) -> u16 {
-        self.cols - 1
-    }
-
-    pub fn last_row(&self) -> u16 {
-        self.rows - 1
-    }
+pub fn term_size() -> anyhow::Result<Rect<u16>> {
+    let dims = crossterm::terminal::size()?;
+    Ok(Rect::from(dims))
 }

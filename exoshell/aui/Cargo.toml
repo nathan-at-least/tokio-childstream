@@ -1,0 +1,10 @@
+[package]
+name = "exoshell-aui"
+version = "0.1.0"
+description = "Abstract UI utilities for exoshell"
+edition.workspace = true
+license.workspace = true
+homepage.workspace = true
+
+[dependencies]
+derive_more.workspace = true

@@ -1,7 +1,8 @@
 use crate::display::Display;
 use crate::event::Event;
-use crate::termsize::TermSize;
+use crate::termsize::term_size;
 use crate::Runner;
+use exoshell_aui::Rect;
 use exoshell_runner::{Run, Status};
 
 const HEADER_INDICATOR: char = '>';
@@ -11,14 +12,14 @@ pub(crate) struct UI {
     runner: Runner,
     display: Display,
     inbuf: String,
-    size: TermSize,
+    size: Rect<u16>,
 }
 
 impl UI {
     pub(crate) fn new(runner: Runner) -> anyhow::Result<Self> {
         let display = Display::new()?;
         let inbuf = String::new();
-        let size = TermSize::new()?;
+        let size = term_size()?;
 
         let mut me = UI {
             runner,
@@ -88,10 +89,10 @@ impl UI {
         self.update_size()?;
         tracing::debug!(?self.size);
 
-        let mut row_bottom = self.size.last_row();
+        let mut row_bottom = last_row(self.size);
 
         for run in self.runner.runs().rev() {
-            for (glyph, line) in run.layout_reverse_log(self.size.cols_log()) {
+            for (glyph, line) in run.layout_reverse_log(cols_log(self.size)) {
                 self.display.write_row(row_bottom, glyph, line)?;
                 row_bottom -= 1;
                 if row_bottom == 1 {
@@ -115,20 +116,28 @@ impl UI {
     fn display_prompt(&mut self) -> anyhow::Result<()> {
         let inbuf = &self.inbuf;
         self.display
-            .write_row(self.size.last_row(), HEADER_INDICATOR, inbuf)?
+            .write_row(last_row(self.size), HEADER_INDICATOR, inbuf)?
             .update()?;
         Ok(())
     }
 
     fn update_size(&mut self) -> anyhow::Result<()> {
-        self.size = TermSize::new()?;
+        self.size = term_size()?;
         Ok(())
     }
 }
 
-fn format_header(run: &Run, size: TermSize) -> String {
+fn last_row(termsize: Rect<u16>) -> u16 {
+    termsize.height() - 1
+}
+
+fn cols_log(termsize: Rect<u16>) -> u16 {
+    termsize.width() - 1
+}
+
+fn format_header(run: &Run, size: Rect<u16>) -> String {
     let status = status_info(run);
-    let cutoff = usize::from(size.cols_log()) - status.chars().count();
+    let cutoff = usize::from(cols_log(size)) - status.chars().count();
     let cmdtext = run.command();
     let mut s = String::new();
     if cmdtext.chars().count() > cutoff {
@@ -141,7 +150,7 @@ fn format_header(run: &Run, size: TermSize) -> String {
         }
     }
     s.push_str(&status);
-    assert_eq!(s.len(), usize::from(size.cols_log()));
+    assert_eq!(s.len(), usize::from(cols_log(size)));
     s
 }
 
