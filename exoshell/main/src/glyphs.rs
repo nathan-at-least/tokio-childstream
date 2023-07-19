@@ -1,4 +1,4 @@
-use exoshell_runner::{LogItemSource, Status};
+use exoshell_runner::{LogItemSource, PaneMeta, Status};
 use std::process::ExitStatus;
 
 pub(crate) trait Glyph {
@@ -40,9 +40,20 @@ impl Glyph for LogItemSource {
         match self {
             FailedToLaunch => FAILED_TO_LAUNCH,
             ChildIO => 'X',
-            ChildOut => '•',
+            ChildOut => ' ',
             ChildErr => '⚠',
-            LineContinuation => ' ',
+        }
+    }
+}
+
+impl Glyph for PaneMeta {
+    fn glyph(&self) -> char {
+        use PaneMeta::*;
+
+        match self {
+            Header(x) => x.glyph(),
+            Line(x) => x.glyph(),
+            LineContinuation => '⮚',
         }
     }
 }

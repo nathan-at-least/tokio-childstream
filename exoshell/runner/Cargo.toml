@@ -8,6 +8,8 @@ homepage.workspace = true
 [dependencies]
 anyhow.workspace = true
 derive-new.workspace = true
+derive_more.workspace = true
+exoshell-aui.workspace = true
 exoshell-command.workspace = true
 exoshell-event-queue.workspace = true
 futures.workspace = true
