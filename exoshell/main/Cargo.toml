@@ -8,6 +8,7 @@ homepage.workspace = true
 
 [dependencies]
 anyhow.workspace = true
+application-paths.workspace = true
 clap.workspace = true
 crossterm.workspace = true
 derive_more.workspace = true
@@ -17,3 +18,5 @@ exoshell-runner.workspace = true
 futures.workspace = true
 tokio-interval-stream.workspace = true
 tokio = { workspace = true, features = ["rt", "macros", "time"] }
+tracing-subscriber.workspace = true
+tracing.workspace = true
