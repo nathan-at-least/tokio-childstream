@@ -86,45 +86,26 @@ impl UI {
 
     fn display_runs(&mut self) -> anyhow::Result<()> {
         self.update_size()?;
+        tracing::debug!(?self.size);
 
         let mut row_bottom = self.size.last_row();
 
         for run in self.runner.runs().rev() {
-            // BUG: log_length is lines != len of formatted log lines for long lines
-            let len_full = run.log_length() + 1; // 1 for header line
-
-            let (row_top, truncate) = if len_full > usize::from(row_bottom) {
-                (0, true)
-            } else {
-                (row_bottom - u16::try_from(len_full)?, false)
-            };
-
-            self.display
-                .move_to_row(row_top)?
-                .write_glyph_line(HEADER_INDICATOR, &format_header(run, self.size))?;
-
-            if truncate {
-                // -1 from half includes 1 row for header and 1 for mid-truncation
-                let len_half = (row_bottom - row_top) / 2 - 1;
-
-                self.display
-                    .write_glyph_lines(
-                        run.format_log(self.size.cols_log())
-                            .take(usize::from(len_half)),
-                    )?
-                    .write_glyph_line(VERTICAL_TRUNCATION, "")?
-                    .write_glyph_lines(
-                        run.format_log(self.size.cols_log())
-                            .skip(run.log_length() - usize::from(len_half)),
-                    )?;
-            } else {
-                self.display
-                    .write_glyph_lines(run.format_log(self.size.cols_log()))?;
+            for (glyph, line) in run.layout_reverse_log(self.size.cols_log()) {
+                self.display.write_row(row_bottom, glyph, line)?;
+                row_bottom -= 1;
+                if row_bottom == 1 {
+                    self.display.write_row(1, VERTICAL_TRUNCATION, "")?;
+                    row_bottom = 0;
+                    break;
+                }
             }
-
-            row_bottom = row_top;
+            self.display
+                .write_row(row_bottom, HEADER_INDICATOR, &format_header(run, self.size))?;
             if row_bottom == 0 {
                 break;
+            } else {
+                row_bottom -= 1;
             }
         }
 
@@ -134,8 +115,7 @@ impl UI {
     fn display_prompt(&mut self) -> anyhow::Result<()> {
         let inbuf = &self.inbuf;
         self.display
-            .move_to_row(self.size.last_row())?
-            .write_glyph_line(HEADER_INDICATOR, inbuf)?
+            .write_row(self.size.last_row(), HEADER_INDICATOR, inbuf)?
             .update()?;
         Ok(())
     }

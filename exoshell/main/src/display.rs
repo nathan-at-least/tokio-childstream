@@ -8,8 +8,6 @@ const GOODBYE: &str = "🐢 Until next time! 👋\n";
 #[derive(Debug)]
 pub(crate) struct Display {
     stdout: Stdout,
-    // We must track row separately from `crossterm` because `crossterm::cursor::position` may fail.
-    row: u16,
 }
 
 impl Display {
@@ -19,7 +17,7 @@ impl Display {
         let mut stdout = tty::get()?;
         stdout.write_all(WELCOME.as_bytes())?;
         screen::setup(&mut stdout)?;
-        Ok(Display { stdout, row: 0 })
+        Ok(Display { stdout })
     }
 
     pub(crate) fn cleanup(&mut self) -> anyhow::Result<()> {
@@ -36,30 +34,26 @@ impl Display {
         Ok(())
     }
 
-    pub(crate) fn move_to_row(&mut self, row: u16) -> anyhow::Result<&mut Self> {
-        use crossterm::{cursor, QueueableCommand};
-
-        self.row = row;
-        self.stdout.queue(cursor::MoveTo(0, self.row))?;
-        Ok(self)
-    }
-
-    pub(crate) fn write_glyph_line<G>(&mut self, glyph: G, line: &str) -> anyhow::Result<&mut Self>
+    pub(crate) fn write_row<G>(
+        &mut self,
+        row: u16,
+        glyph: G,
+        line: &str,
+    ) -> anyhow::Result<&mut Self>
     where
         G: Glyph,
     {
         use crate::termsize::TermSize;
-        use crossterm::{style, QueueableCommand};
-
-        let tsize = TermSize::new()?;
+        use crossterm::{cursor, style, QueueableCommand};
 
         assert!(!line.contains('\n'), "{line:?}");
         assert!(
-            line.chars().count() <= usize::from(tsize.cols_log()),
+            line.chars().count() <= usize::from(TermSize::new()?.cols_log()),
             "{line:?}"
         );
 
         self.stdout
+            .queue(cursor::MoveTo(0, row))?
             .queue(terminal::Clear(terminal::ClearType::CurrentLine))?
             .queue(style::SetBackgroundColor(style::Color::DarkCyan))?
             .write_all(CharBytes::new(glyph.glyph()).as_bytes())?;
@@ -68,22 +62,6 @@ impl Display {
             .queue(style::SetBackgroundColor(style::Color::Reset))?
             .write_all(line.as_bytes())?;
 
-        let size = TermSize::new()?;
-        if self.row < size.last_row() {
-            self.move_to_row(self.row + 1)?;
-        }
-
-        Ok(self)
-    }
-
-    pub(crate) fn write_glyph_lines<'a, I, G>(&mut self, lines: I) -> anyhow::Result<&mut Self>
-    where
-        I: IntoIterator<Item = (G, &'a str)>,
-        G: Glyph,
-    {
-        for (g, s) in lines {
-            self.write_glyph_line(g, s)?;
-        }
         Ok(self)
     }
 }
