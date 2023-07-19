@@ -1,0 +1,11 @@
+[package]
+name = "application-paths"
+version = "0.1.0"
+description = "Standardized paths specific to an application"
+edition.workspace = true
+license.workspace = true
+homepage.workspace = true
+
+[dependencies]
+derive_more.workspace = true
+dirs.workspace = true

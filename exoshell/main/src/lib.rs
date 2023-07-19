@@ -3,6 +3,7 @@ pub mod cli;
 mod display;
 mod event;
 mod glyphs;
+mod logging;
 mod mainloop;
 mod screen;
 mod status;

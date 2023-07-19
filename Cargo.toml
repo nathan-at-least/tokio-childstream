@@ -1,5 +1,6 @@
 [workspace]
 members = [
+  "application-paths",
   "bytelinebuf",
   "bytelinestream",
   "exoshell/command",
@@ -23,13 +24,17 @@ clap = { version = "4.2.2", features = ["derive"] }
 crossterm = { version = "0.26.1", features = ["event-stream"] }
 derive_more = "0.99.17"
 derive-new = "0.5.9"
+dirs = "5.0.1"
 futures = "0.3.28"
 pin-project = "1.0.12"
 test-case = "3.1.0"
 tokio = "1.27.0"
 tokio-util = { version = "0.7.7", features = ["io"] }
+tracing = "0.1.37"
+tracing-subscriber = "0.3.17"
 
 # Internal crates:
+application-paths = { path = "application-paths" }
 bytelinebuf = { path = "bytelinebuf" }
 bytelinestream = { path = "bytelinestream" }
 exoshell-command = { path = "exoshell/command" }
