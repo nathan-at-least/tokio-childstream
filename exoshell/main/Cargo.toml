@@ -13,6 +13,7 @@ clap.workspace = true
 crossterm.workspace = true
 derive_more.workspace = true
 derive-new.workspace = true
+exoshell-aui.workspace = true
 exoshell-event-queue.workspace = true
 exoshell-runner.workspace = true
 futures.workspace = true

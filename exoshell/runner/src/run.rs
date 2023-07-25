@@ -1,4 +1,6 @@
 use crate::formatrows::FormatRows;
+use exoshell_aui::Pane;
+use std::borrow::Cow;
 
 #[derive(Debug, derive_new::new)]
 pub struct Run {
@@ -9,7 +11,7 @@ pub struct Run {
     log: Vec<(LogItemSource, String)>,
 }
 
-#[derive(Debug, Default)]
+#[derive(Copy, Clone, Debug, Default)]
 pub enum Status {
     #[default]
     Running,
@@ -23,6 +25,12 @@ pub enum LogItemSource {
     ChildIO,
     ChildOut,
     ChildErr,
+}
+
+#[derive(Copy, Clone, Debug, derive_more::From)]
+pub enum PaneMeta {
+    Header(Status),
+    Line(LogItemSource),
     LineContinuation,
 }
 
@@ -43,27 +51,28 @@ impl Run {
         self.log.len()
     }
 
-    pub fn layout_reverse_log<N>(&self, max_width: N) -> impl Iterator<Item = (LogItemSource, &str)>
-    where
-        usize: From<N>,
-    {
-        let max_width = usize::from(max_width);
+    pub fn render_into(&self, pane: &mut Pane<PaneMeta>) -> anyhow::Result<()> {
+        pane.append_line(self.status, truncate_string(self.command(), pane.width()))?;
 
-        self.log.iter().rev().flat_map(move |(source, text)| {
+        for (meta, row) in self.wrap_log_lines(pane.width()) {
+            pane.append_line(meta, row)?;
+        }
+
+        Ok(())
+    }
+
+    fn wrap_log_lines(&self, max_width: usize) -> impl Iterator<Item = (PaneMeta, &str)> {
+        self.log.iter().flat_map(move |(source, text)| {
             FormatRows::new(max_width, text.as_str())
-                .fold(vec![], |mut rows, row| {
-                    rows.push((
-                        if rows.is_empty() {
-                            *source
-                        } else {
-                            LogItemSource::LineContinuation
-                        },
-                        row,
-                    ));
-                    rows
+                .enumerate()
+                .map(|(ix, row)| {
+                    let meta = if ix == 0 {
+                        PaneMeta::from(*source)
+                    } else {
+                        PaneMeta::LineContinuation
+                    };
+                    (meta, row)
                 })
-                .into_iter()
-                .rev()
         })
     }
 
@@ -99,5 +108,15 @@ impl Run {
                 self.log.push((ChildIO, format!("{e}")));
             }
         }
+    }
+}
+
+fn truncate_string(s: &str, maxlen: usize) -> Cow<'_, str> {
+    if s.chars().count() > maxlen {
+        let mut s: String = s.chars().take(maxlen - 1).collect();
+        s.push('…');
+        Cow::from(s)
+    } else {
+        Cow::from(s)
     }
 }

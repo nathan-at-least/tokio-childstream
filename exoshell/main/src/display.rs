@@ -43,14 +43,9 @@ impl Display {
     where
         G: Glyph,
     {
-        use crate::termsize::TermSize;
         use crossterm::{cursor, style, QueueableCommand};
 
         assert!(!line.contains('\n'), "{line:?}");
-        assert!(
-            line.chars().count() <= usize::from(TermSize::new()?.cols_log()),
-            "{line:?}"
-        );
 
         self.stdout
             .queue(cursor::MoveTo(0, row))?
